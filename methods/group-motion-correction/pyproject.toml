@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "groupmc"
+version = "0.1.0"
+description = "Register several recordings of one field of view to a shared reference."
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "scikit-image", "tifffile", "h5py"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "gallery-style"]
+
+[tool.setuptools.packages.find]
+include = ["groupmc*"]
