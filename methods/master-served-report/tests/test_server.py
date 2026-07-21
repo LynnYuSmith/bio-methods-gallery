@@ -54,3 +54,10 @@ def test_unknown_route_and_missing_key_are_404(base_url):
             assert False, "expected an error status"
         except urllib.error.HTTPError as e:
             assert e.code == 404
+
+
+def test_root_lists_endpoints(base_url):
+    root = _get(base_url.replace("/api", "/"))
+    assert root["served"].endswith(".h5")
+    assert root["areas"] == ["Area1"]
+    assert root["endpoints"]["info"] == "/api/info"

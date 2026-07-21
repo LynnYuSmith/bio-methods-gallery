@@ -97,10 +97,31 @@ def make_handler(master_path: str):
             self.end_headers()
             self.wfile.write(body)
 
+        def _index(self) -> None:
+            """The root lists the endpoints, filled in with this file's real areas and units."""
+            f = open_master(master_path)
+            info = _info(f)
+            area = info["areas"][0] if info["areas"] else "<area>"
+            unit = info["units"][0] if info["units"] else "<unit>"
+            self._send({
+                "served": os.path.basename(master_path),
+                "areas": info["areas"],
+                "units": info["units"],
+                "endpoints": {
+                    "info": "/api/info",
+                    "trace_matrix": f"/api/trace/{unit}/dff",
+                    "trace_roi": f"/api/trace/{unit}/dff/<roi>",
+                    "rois": f"/api/rois/{area}",
+                },
+            })
+
         def do_GET(self) -> None:
             parts = self.path.strip("/").split("/")
+            if parts == [""]:
+                self._index()                        # the root lists the endpoints
+                return
             if parts[:1] != ["api"]:
-                self._send({"error": "not found"}, 404)
+                self._send({"error": "not found", "try": "/api/info"}, 404)
                 return
             f = open_master(master_path)
             try:
