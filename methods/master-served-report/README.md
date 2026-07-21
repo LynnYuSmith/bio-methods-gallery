@@ -17,6 +17,8 @@ what a tab needs, when it needs it. Rewrite the file under a running server and 
 returns the new bytes, because the file handle is cached on `(path, mtime)`. To share the experiment,
 copy the one file.
 
+![the report reads traces and ROIs live from one HDF5 over /api](figures/before_after.png)
+
 ## Endpoints
 
     GET /api/info                        areas, units, experiment metadata

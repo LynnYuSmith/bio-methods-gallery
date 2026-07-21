@@ -10,6 +10,15 @@ one, on real data, with a before/after figure").
 > Status: private, in progress. Tiles graduate to public one at a time, each after its ownership check
 > (below) and a clean pass.
 
+## Built so far
+
+| tile | what it shows |
+|---|---|
+| [master-served-report](methods/master-served-report) | one HDF5 experiment file served live over a small REST API; the browser report reads everything from it |
+| [group-motion-correction](methods/group-motion-correction) | several recordings of one field of view registered to a shared reference, so one ROI fits them all |
+
+![group motion correction: a shared reference aligns the recordings](methods/group-motion-correction/figures/before_after.png)
+
 ## Two tile types
 
 (A) Method mini-repo (`methods/<name>/`). One API, one runnable example, one before/after figure, a
