@@ -15,6 +15,7 @@ one, on real data, with a before/after figure").
 | tile | what it shows |
 |---|---|
 | [master-served-report](methods/master-served-report) | one HDF5 experiment file served live over a small REST API; the browser report reads everything from it |
+| [bouton-detection](methods/bouton-detection) | boutons detected by activity, not brightness; the size window is read from the recording's own active regions |
 | [group-motion-correction](methods/group-motion-correction) | several recordings of one field of view registered to a shared reference, so one ROI fits them all |
 
 ![group motion correction: a shared reference aligns the recordings](methods/group-motion-correction/figures/before_after.png)

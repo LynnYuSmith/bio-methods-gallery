@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "boutons"
+version = "0.1.0"
+description = "Detect axonal boutons by blob detection plus a physiological size filter."
+requires-python = ">=3.10"
+dependencies = ["numpy", "scikit-image"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "gallery-style"]
+
+[tool.setuptools.packages.find]
+include = ["boutons*"]
