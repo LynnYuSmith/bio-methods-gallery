@@ -56,8 +56,18 @@ def test_unknown_route_and_missing_key_are_404(base_url):
             assert e.code == 404
 
 
-def test_root_lists_endpoints(base_url):
-    root = _get(base_url.replace("/api", "/"))
-    assert root["served"].endswith(".h5")
-    assert root["areas"] == ["Area1"]
-    assert root["endpoints"]["info"] == "/api/info"
+def test_root_serves_html_report(base_url):
+    import urllib.request
+    root = base_url.replace("/api", "/")
+    with urllib.request.urlopen(root) as r:
+        assert r.headers["Content-Type"].startswith("text/html")
+        body = r.read().decode()
+    assert "<!doctype html>" in body.lower()
+    assert "/api" in body                       # the report fetches the endpoints
+
+
+def test_api_index_lists_endpoints(base_url):
+    idx = _get(base_url)                          # /api
+    assert idx["served"].endswith(".h5")
+    assert idx["areas"] == ["Area1"]
+    assert idx["endpoints"]["info"] == "/api/info"

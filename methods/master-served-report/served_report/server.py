@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from functools import lru_cache
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -97,8 +98,17 @@ def make_handler(master_path: str):
             self.end_headers()
             self.wfile.write(body)
 
+        def _report(self) -> None:
+            """Serve the bundled HTML report; it reads the /api endpoints and draws the data."""
+            html = (Path(__file__).resolve().parent / "report.html").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(html)))
+            self.end_headers()
+            self.wfile.write(html)
+
         def _index(self) -> None:
-            """The root lists the endpoints, filled in with this file's real areas and units."""
+            """`/api` lists the endpoints, filled in with this file's real areas and units."""
             f = open_master(master_path)
             info = _info(f)
             area = info["areas"][0] if info["areas"] else "<area>"
@@ -118,15 +128,17 @@ def make_handler(master_path: str):
         def do_GET(self) -> None:
             parts = self.path.strip("/").split("/")
             if parts == [""]:
-                self._index()                        # the root lists the endpoints
+                self._report()                       # the root serves the HTML report
                 return
             if parts[:1] != ["api"]:
-                self._send({"error": "not found", "try": "/api/info"}, 404)
+                self._send({"error": "not found", "try": "/api"}, 404)
                 return
             f = open_master(master_path)
             try:
                 route = parts[1:]
-                if route == ["info"]:
+                if route == []:
+                    self._index()                    # /api lists the endpoints
+                elif route == ["info"]:
                     self._send(_info(f))
                 elif route[:1] == ["trace"] and len(route) in (3, 4):
                     self._send(_trace(f, route[1], route[2],

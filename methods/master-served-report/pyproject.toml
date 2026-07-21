@@ -12,5 +12,8 @@ dependencies = ["h5py", "numpy"]
 [project.optional-dependencies]
 dev = ["pytest", "matplotlib", "gallery-style"]
 
+[tool.setuptools.package-data]
+served_report = ["report.html"]
+
 [tool.setuptools.packages.find]
 include = ["served_report*"]

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>served report</title>
+<style>
+  :root { --ink:#1a1a1a; --grid:#e6e6e6; --zero:#9a9a9a; --muted:#666; }
+  body { margin:0; background:#fff; color:var(--ink);
+         font:13px/1.5 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  header { padding:16px 20px; border-bottom:1px solid var(--grid); }
+  h1 { margin:0; font-size:16px; font-weight:600; }
+  .sub { color:var(--muted); font-size:12px; margin-top:2px; }
+  .wrap { display:flex; gap:20px; padding:20px; align-items:flex-start; flex-wrap:wrap; }
+  .panel { border:1px solid var(--grid); border-radius:4px; padding:12px; }
+  .panel h2 { margin:0 0 8px; font-size:12px; font-weight:600; color:var(--muted);
+              text-transform:uppercase; letter-spacing:.04em; }
+  select, button { font:inherit; padding:3px 6px; border:1px solid var(--grid);
+                   background:#fff; border-radius:3px; color:var(--ink); }
+  canvas { display:block; }
+  .roi { fill:none; stroke:#6b7f9e; stroke-width:1; }
+  .axis { font-size:10px; fill:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>served report</h1>
+  <div class="sub" id="sub">loading…</div>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>Traces</h2>
+    <div>
+      unit <select id="unit"></select>
+      kind <select id="kind"></select>
+    </div>
+    <canvas id="traces" width="560" height="320"></canvas>
+  </div>
+  <div class="panel">
+    <h2>ROIs</h2>
+    <div>area <select id="area"></select></div>
+    <canvas id="rois" width="260" height="260"></canvas>
+  </div>
+</div>
+
+<script>
+const API = "/api";
+const CAT = ["#3b3b3b","#6b7f9e","#a08262","#7a9471","#9e7b8a","#5f8a8b"];
+const GRID = "#e6e6e6", ZERO = "#9a9a9a", INK = "#1a1a1a", MUTED = "#666";
+const j = (p) => fetch(API + p).then(r => r.json());
+
+async function init() {
+  const info = await j("/info");
+  document.getElementById("sub").textContent =
+    info.metadata.experiment_id + " · " + info.areas.length + " area(s) · " +
+    info.units.length + " unit(s)";
+  fill("unit", info.units);
+  fill("area", info.areas);
+  fill("kind", ["dff"]);                 // the sample carries dff; add kinds as the file has them
+  document.getElementById("unit").onchange = drawTraces;
+  document.getElementById("kind").onchange = drawTraces;
+  document.getElementById("area").onchange = drawROIs;
+  drawTraces(); drawROIs();
+}
+function fill(id, items) {
+  document.getElementById(id).innerHTML =
+    items.map(x => `<option>${x}</option>`).join("");
+}
+const val = (id) => document.getElementById(id).value;
+
+async function drawTraces() {
+  const d = await j(`/trace/${val("unit")}/${val("kind")}`);
+  const cv = document.getElementById("traces"), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height, pad = {l:40, r:10, t:10, b:24};
+  ctx.clearRect(0,0,W,H);
+  const rows = d.data[0].length, T = d.data.length;
+  const per = (H - pad.t - pad.b) / rows;
+  // light-grey grid
+  ctx.strokeStyle = GRID; ctx.lineWidth = 1;
+  for (let g=0; g<=4; g++){ const x = pad.l + (W-pad.l-pad.r)*g/4;
+    ctx.beginPath(); ctx.moveTo(x,pad.t); ctx.lineTo(x,H-pad.b); ctx.stroke(); }
+  for (let r=0; r<rows; r++){
+    const base = pad.t + per*(r+0.5);
+    // grey zero line for this trace
+    ctx.strokeStyle = ZERO; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(pad.l, base); ctx.lineTo(W-pad.r, base); ctx.stroke();
+    // the trace
+    ctx.strokeStyle = CAT[r % CAT.length]; ctx.lineWidth = 1.1; ctx.beginPath();
+    for (let t=0; t<T; t++){
+      const x = pad.l + (W-pad.l-pad.r)*t/(T-1);
+      const y = base - d.data[t][r]*per*0.8;
+      t ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+    }
+    ctx.stroke();
+    ctx.fillStyle = MUTED; ctx.font = "10px sans-serif"; ctx.textAlign = "right";
+    ctx.fillText(d.roi_names[r], pad.l-4, base+3);
+  }
+  ctx.fillStyle = MUTED; ctx.textAlign = "center";
+  ctx.fillText("time, frames", (pad.l+W-pad.r)/2, H-6);
+}
+
+async function drawROIs() {
+  const d = await j(`/rois/${val("area")}`);
+  const cv = document.getElementById("rois"), ctx = cv.getContext("2d");
+  ctx.clearRect(0,0,cv.width,cv.height);
+  const polys = Object.values(d.polygons);
+  const xs = polys.flat().map(p=>p[0]), ys = polys.flat().map(p=>p[1]);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  const s = 220/Math.max(maxX-minX, maxY-minY, 1), ox=20-minX*s, oy=20-minY*s;
+  for (const [nm, poly] of Object.entries(d.polygons)){
+    ctx.strokeStyle = "#6b7f9e"; ctx.lineWidth = 1; ctx.beginPath();
+    poly.forEach((p,i)=>{ const x=p[0]*s+ox, y=p[1]*s+oy; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.closePath(); ctx.stroke();
+    const cx = poly.reduce((a,p)=>a+p[0],0)/poly.length*s+ox;
+    const cy = poly.reduce((a,p)=>a+p[1],0)/poly.length*s+oy;
+    ctx.fillStyle = MUTED; ctx.font = "9px sans-serif"; ctx.textAlign="center";
+    ctx.fillText(nm, cx, cy);
+  }
+}
+init();
+</script>
+</body>
+</html>
