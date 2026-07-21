@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "served-report"
+version = "0.1.0"
+description = "Serve one self-contained HDF5 experiment file live over a small REST API."
+requires-python = ">=3.10"
+dependencies = ["h5py", "numpy"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "gallery-style"]
+
+[tool.setuptools.packages.find]
+include = ["served_report*"]

@@ -47,3 +47,10 @@ ownership tier and the established method it is benchmarked against.
 cp -r _template/methodname methods/<your_method>
 # rename methodname/, then fill in the README, the code, one example, one figure, the tests
 ```
+
+## Shared style
+
+Every tile draws through `gallery_style` (a quiet white-ground look built on Fabio Crameri'''s
+scientific colour maps): a light-grey grid, a darker-grey zero line, muted categorical colours, and
+axis labels in the journal form (the quantity, a comma, the unit: `time, s` and `ΔF/F, a.u.`, never
+`time (s)`). Install it into a tile'''s environment with `pip install -e ../../gallery_style`.

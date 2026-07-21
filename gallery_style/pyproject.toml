@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gallery-style"
+version = "0.1.0"
+description = "Shared Crameri scientific-colourmap plotting style for the bio-methods gallery."
+requires-python = ">=3.10"
+dependencies = ["cmcrameri", "matplotlib", "numpy"]
+
+[tool.setuptools.packages.find]
+include = ["gallery_style*"]

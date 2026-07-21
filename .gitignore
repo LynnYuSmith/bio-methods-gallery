@@ -6,3 +6,8 @@ __pycache__/
 .DS_Store
 build/
 dist/
+.venv/
+*.egg-info/
+examples/sample_master.h5
+**/sample_master.h5
+.idea/
