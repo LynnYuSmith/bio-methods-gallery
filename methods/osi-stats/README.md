@@ -72,6 +72,26 @@ pytest
   α = 0.05 expects ~5% false positives by construction; Benjamini-Hochberg controls the
   false-discovery rate across the family.
 
+## Limitations — needs enough repeats
+
+This is the price of controlling false positives: the method is **conservative at low trial
+counts**, to the point of blindness. The shuffle null on a handful of trials is wide, and
+after the population FDR correction a genuinely tuned bouton often cannot clear the bar. On
+synthetic populations with strong tuning, recovery of the truly-tuned boutons runs roughly:
+
+| trials / orientation | tuned boutons recovered | false positives |
+|---|---|---|
+| 5  | almost none | 0 |
+| 8  | most | 0 |
+| 10+ | ~all | 0 |
+
+The false-discovery control holds throughout (≈0 false positives, versus a bare OSI
+threshold flagging most untuned boutons) — but with **≤5 repeats the honest call will find
+little even when real tuning is present**. Use ~8+ repeats per orientation; with fewer, read
+the OSI and q-values as descriptive and don't treat a null result as "no tuning." (The exact
+threshold depends on population size, tuning strength, and noise; the numbers above are a
+guide, not a guarantee.)
+
 ## License
 
 See `LICENSE`.
