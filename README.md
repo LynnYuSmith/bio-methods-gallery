@@ -23,6 +23,18 @@ one, on real data, with a before/after figure").
 
 ![group motion correction: a shared reference aligns the recordings](methods/group-motion-correction/figures/before_after.png)
 
+## Companion tools (separate repos)
+
+Two standalone tools that share the gallery's spirit — a method, a synthetic demo, tests — but
+are full applications in their own repos rather than in-tree tiles. They form a closed loop: one
+plays the stimulus and writes its protocol, the other decodes that protocol back out of the
+recording.
+
+| tool | what it does |
+|---|---|
+| [stimulus-runner](https://github.com/LynnYuSmith/stimulus-runner) | a browser (WebGL) drifting/static grating presenter — seamless grey/black ↔ grating, a sequence of blocks, RED corner pulse markers, and a played-protocol export that overlays onto the recording |
+| [stimulus-aligner](https://github.com/LynnYuSmith/stimulus-aligner) | decodes the recording's photodiode pulse markers and aligns that played protocol onto the frame-exact timeline (which block, and when it truly started) |
+
 ## Two tile types
 
 (A) Method mini-repo (`methods/<name>/`). One API, one runnable example, one before/after figure, a
