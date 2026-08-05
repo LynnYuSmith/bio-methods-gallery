@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pupiltrack"
+version = "0.1.0"
+description = "Track pupil size across a video by running a per-frame detector with temporal consistency."
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "scikit-image"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "gallery-style"]
+
+[tool.setuptools.packages.find]
+include = ["pupiltrack*"]
