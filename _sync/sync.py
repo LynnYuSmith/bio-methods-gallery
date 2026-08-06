@@ -42,8 +42,14 @@ def _pipeline_commit(repo: Path) -> str:
 
 
 def _extract_symbols(source_text: str, names: list[str], where: str) -> str:
-    """Return the source of the named top-level defs/classes/assignments, in ``names`` order."""
+    """Return the source of the named top-level defs/classes/assignments, in ``names`` order.
+
+    Includes any DECORATORS: ``ast.get_source_segment`` (and node.lineno) start at the
+    ``def``/``class`` keyword, dropping decorator lines above — which silently strips e.g.
+    ``@dataclass`` and produces a class with no generated ``__init__``. We slice from the first
+    decorator's line instead."""
     tree = ast.parse(source_text)
+    lines = source_text.splitlines()
     by_name: dict[str, str] = {}
     for node in tree.body:
         node_names: list[str] = []
@@ -53,9 +59,11 @@ def _extract_symbols(source_text: str, names: list[str], where: str) -> str:
             node_names = [t.id for t in node.targets if isinstance(t, ast.Name)]
         for nm in node_names:
             if nm in names:
-                seg = ast.get_source_segment(source_text, node)
-                if seg is not None:
-                    by_name[nm] = seg
+                start = node.lineno
+                deco = getattr(node, "decorator_list", [])
+                if deco:                                  # keep the @decorator lines above the def/class
+                    start = min(d.lineno for d in deco)
+                by_name[nm] = "\n".join(lines[start - 1:node.end_lineno])
     missing = [n for n in names if n not in by_name]
     if missing:
         raise SystemExit(f"[sync] {where}: symbol(s) not found: {missing}")

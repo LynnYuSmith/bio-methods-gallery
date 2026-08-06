@@ -53,6 +53,27 @@ TILES: dict[str, dict] = {
             "tile's own contribution and lives in significance.py, not here."
         ),
     },
+    "cross-session-registration": {
+        "dest": "xsession/_synced.py",
+        "header": (
+            "import numpy as np\n"
+            "from dataclasses import dataclass\n"
+            "from typing import List, Optional, Tuple\n"
+        ),
+        "extracts": [
+            ("lib/roi/cross_session.py", [
+                "CrossSessionFOVResult", "_prep_image", "_prep_volume",
+                "_alignment_peak_corr", "_alignment_peak_corr_3d",
+                "register_fov_xy", "register_zstack_3d", "match_boutons_cross_session",
+            ]),
+        ],
+        "note": (
+            "Real cross-session FOV registration: 2-D (register_fov_xy) and full 3-D volume "
+            "registration (register_zstack_3d) that uses a Sato vesselness fingerprint of the axon "
+            "arbor rather than the drifting mean image, plus 3-D bouton matching across the recovered "
+            "shift. All shifts are the project SUBTRACT convention (moving→reference displacement)."
+        ),
+    },
     "group-motion-correction": {
         "dest": "groupmc/_synced.py",
         "header": "import numpy as np\nfrom typing import Tuple\n",

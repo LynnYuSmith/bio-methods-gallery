@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xsession"
+version = "0.1.0"
+description = "Register the same field of view across days in 3-D on a vesselness fingerprint."
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "scikit-image"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "gallery-style"]
+
+[tool.setuptools.packages.find]
+include = ["xsession*"]
