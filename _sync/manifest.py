@@ -53,6 +53,18 @@ TILES: dict[str, dict] = {
             "tile's own contribution and lives in significance.py, not here."
         ),
     },
+    "trace-trustworthiness": {
+        "dest": "tracetrust/_synced.py",
+        "header": "import numpy as np\nfrom typing import Tuple\n",
+        "extracts": [
+            ("lib/roi/cross_session.py", ["_prep_image", "_alignment_peak_corr", "register_fov_xy"]),
+        ],
+        "note": (
+            "Real sub-pixel image registration (register_fov_xy, phase cross-correlation) — reused "
+            "here to TRACK a bouton's residual xy displacement over time after motion correction. "
+            "The z-drift detector (resting-F trend vs the FOV) is the tile's own contribution."
+        ),
+    },
     "trace-qc": {
         "dest": "traceqc/_synced.py",
         "header": (

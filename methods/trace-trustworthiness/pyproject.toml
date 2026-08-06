@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tracetrust"
+version = "0.1.0"
+description = "Trace trustworthiness after 2-D motion correction: residual xy motion + z-drift detection."
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "scikit-image"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "gallery-style"]
+
+[tool.setuptools.packages.find]
+include = ["tracetrust*"]

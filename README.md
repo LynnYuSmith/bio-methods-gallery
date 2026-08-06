@@ -22,6 +22,7 @@ one, on real data, with a before/after figure").
 | [dff-baseline](methods/dff-baseline) | a rolling median baseline, left unclipped, so ΔF/F sits symmetric around zero instead of biased up by a lower-envelope |
 | [osi-stats](methods/osi-stats) | orientation selectivity called with a shuffle test and population FDR, so a bare OSI threshold's positive-bias false positives are controlled |
 | [trace-qc](methods/trace-qc) | two per-trace quality gates on their proper representations: SNR (MAD-based noise floor) graded on ΔF/F, and a photobleaching fit on the raw fluorescence |
+| [trace-trustworthiness](methods/trace-trustworthiness) | after 2-D motion correction, is the ROI still measuring the same bouton? tracks residual xy motion, and detects z-drift (a bouton leaving the focal plane and reading as falsely silent) by its resting-F decline versus the field |
 
 ![group motion correction: a shared reference aligns the recordings](methods/group-motion-correction/figures/before_after.png)
 
