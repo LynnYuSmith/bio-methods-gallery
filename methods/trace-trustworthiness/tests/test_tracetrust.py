@@ -4,36 +4,38 @@ from make_sample import make_movie
 from tracetrust import assess
 
 
-def test_each_bouton_gets_its_true_verdict():
+def test_residual_motion_is_movement_locked():
     stack, rois, fps, truth = make_movie(seed=0)
-    res = assess(stack, rois)
-    assert res["stable"]["verdict"] == "trustworthy"
-    assert res["xy_drift"]["verdict"] == "residual-motion"
-    assert res["z_drift"]["verdict"] == "z-drift"
+    res = assess(stack, rois, fps, run=truth["run"])
+    # every bouton's residual motion tracks the running trace
+    for name in rois:
+        assert res[name]["run_corr"] > 0.5, (name, res[name]["run_corr"])
 
 
-def test_xy_drift_shows_residual_shift_the_others_dont():
+def test_present_boutons_keep_a_high_presence():
     stack, rois, fps, truth = make_movie(seed=0)
-    res = assess(stack, rois)
-    assert res["xy_drift"]["residual_shift_px"] > 2.0        # patch really moves
-    assert res["stable"]["residual_shift_px"] < 1.0
-    assert res["z_drift"]["residual_shift_px"] < 1.0         # z-drift does NOT move in xy
+    res = assess(stack, rois, fps, run=truth["run"])
+    for name in rois:
+        if name == truth["disappears"]:
+            continue
+        assert not res[name]["disappeared"]
+        assert res[name]["presence"].min() > 0.7        # stays matchable throughout
 
 
-def test_zdrift_dims_faster_than_the_field_but_stable_does_not():
-    # the whole point: z-drift is separable from FOV-wide photobleaching
+def test_the_disappearing_bouton_is_caught():
     stack, rois, fps, truth = make_movie(seed=0)
-    res = assess(stack, rois)
-    assert res["z_drift"]["zdrift_excess"] > 0.3            # dims well beyond the FOV bleaching
-    assert res["stable"]["zdrift_excess"] < 0.15           # tracks the field
-    # and the z-drift bouton's apparent "silence" is a big resting-level drop
-    assert res["z_drift"]["frac_decline"] > 0.5
+    res = assess(stack, rois, fps, run=truth["run"])
+    gone = res[truth["disappears"]]
+    assert gone["disappeared"]                          # flagged as leaving the FOV
+    assert gone["presence"].min() < 0.2                 # presence collapses (ROI reads background)
+    assert gone["max_shift_px"] > 6.0                   # shoved well out of its ROI
 
 
-def test_false_silence_is_not_called_real_silence():
-    # a z-drifting bouton looks quiet (large resting drop) but must NOT read as trustworthy —
-    # its quiet is an artifact of leaving the plane, which is exactly what the verdict says.
-    stack, rois, fps, truth = make_movie(seed=1)
-    res = assess(stack, rois)
-    assert res["z_drift"]["verdict"] == "z-drift"
-    assert res["z_drift"]["verdict"] != "trustworthy"
+def test_disappearance_happens_during_a_bout_not_at_rest():
+    stack, rois, fps, truth = make_movie(seed=0)
+    res = assess(stack, rois, fps, run=truth["run"])
+    gone = res[truth["disappears"]]["gone_flag"]
+    run = truth["run"]
+    # the frames where the bouton is gone are running frames, not resting ones
+    assert run[gone].mean() > run[~gone].mean()
+    assert run[gone].mean() > 0.3

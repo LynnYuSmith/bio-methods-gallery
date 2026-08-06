@@ -18,7 +18,7 @@ one before/after figure*.
 | [dff-baseline](methods/dff-baseline) | a rolling **median** baseline, left unclipped, so ΔF/F sits symmetric around zero instead of biased up |
 | [osi-stats](methods/osi-stats) | orientation selectivity called with a shuffle test + population FDR, not a bare OSI threshold |
 | [trace-qc](methods/trace-qc) | two per-trace gates on their proper representations: SNR (MAD noise floor) on ΔF/F, photobleaching fit on raw F |
-| [trace-trustworthiness](methods/trace-trustworthiness) | after 2-D motion correction — residual xy motion, and z-drift (a bouton leaving the plane, falsely silent) from its resting-F decline vs the field |
+| [trace-trustworthiness](methods/trace-trustworthiness) | after motion correction — per-ROI residual motion during running bouts (x, y and z), flagging each bouton's residual shift and catching boutons pushed out of their ROI, where the trace reads background |
 
 ![a shared reference aligns repeat recordings](methods/group-motion-correction/figures/before_after.png)
 

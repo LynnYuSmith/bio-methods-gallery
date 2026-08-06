@@ -1,49 +1,51 @@
 # trace-trustworthiness
 
-After 2-D motion correction, is a bouton's trace still measuring the **same bouton** — or did
-it drift in **x, y** (mixing in neighbours) or in **z** (leaving the focal plane and reading as
-falsely quiet)? Two checks that a corrected ΔF/F trace alone can't make.
+Motion correction is done — but is a bouton's trace still trustworthy? When the animal runs or
+moves, the tissue shifts in the field of view (x, y **and** z), non-uniformly, so each bouton
+keeps its **own residual motion**, and a big enough bout can push a bouton clean out of its ROI.
+This asks the question **per ROI**, on that bouton's own pixels.
 
-**Ownership tier:** hers / wrapper (the xy tracking reuses the pipeline's registration engine;
-the z-drift detector — resting-fluorescence decline versus the field — is the contribution).
+**Ownership tier:** hers / wrapper (the per-frame registration is the pipeline's `register_fov_xy`;
+the per-ROI residual-motion + disappearance read-out, and locking it to running, are the contribution).
 
-![three boutons after motion correction: one trustworthy, one with residual xy motion, one z-drifting so its trace reads as falsely silent](figures/before_after.png)
+![per-bouton residual displacement rises with each running bout, and one bouton's presence collapses to zero when it is pushed out of its ROI](figures/before_after.png)
 
 ## The idea
 
-Suite2p (and 2-D motion correction generally) fixes **x** and **y** but not **z**. Two failure
-modes survive it, and both make a trace lie:
+Global motion correction (Suite2p) removes the *average* frame shift. But the brain is not a
+rigid block: during running or spontaneous movement, different parts of the field move by
+different amounts, so correction leaves each bouton a **residual** shift — and it does nothing in
+**z**, where the focal plane moving defocuses the bouton. A large bout can move a bouton out of
+its ROI, or out of the plane, so that for those frames the ROI is measuring **background, not the
+bouton** — no matter how good the global correction was.
 
-- **Residual xy motion.** The ROI keeps sliding across the sensor, so the trace mixes in
-  neighbouring pixels. Detected by **tracking the bouton's patch over time**: split the movie
-  into time bins and register each bin's mean patch to the first with the pipeline's
-  `register_fov_xy` (phase cross-correlation). A trustworthy bouton's patch barely moves; a
-  drifting one accumulates a sub-pixel displacement bin after bin.
+So the check is per ROI. Each frame's local patch is registered to a still template of the same
+patch with the pipeline's `register_fov_xy`, which returns both signals at once:
 
-- **z-drift.** The bouton drifts out of the focal plane, so its brightness falls and the trace
-  reads as **going quiet even though the cell never changed its firing** — and a 2-D pipeline
-  cannot see it. It is separated from FOV-wide **photobleaching** by comparing the bouton's own
-  resting-fluorescence decline to the **median decline across the field**: a bouton that dims
-  *faster than the field*, while its patch stays put, is z-drifting — a **false silence**. The
-  z-drift detector is this tile's own contribution.
+- **residual displacement** √(dx² + dy²) — how far this bouton's pixels shifted after correction;
+- **presence** = the post-alignment correlation peak (0–1) — how well the patch still matches the
+  bouton's footprint. It falls when the bouton leaves the patch laterally, and when it defocuses
+  in z; near 0 means the bouton has **disappeared** and the trace is background.
 
-The order matters: check the patch first (residual motion explains a resting-level drop when the
-bouton slides out of its ROI), then, for a bouton that has *not* moved, ask whether it dimmed
-faster than the field. On synthetic data with a known problem per bouton — *stable* (steady),
-*xy_drift* (slides ~5 px), *z_drift* (dims to a few percent while the field bleaches ~20 %) —
-each gets its true verdict, and the z-drifting bouton's apparent silence is correctly called an
-artifact, not a real drop in activity.
+A frame is untrustworthy for a bouton if its residual shift is large or its presence is low.
+Given a running trace, both line up with movement — the corruption is **locomotion-locked**.
+
+On synthetic data (an already-corrected movie), three boutons keep a small residual shift that
+rises with every bout but stay present (`run_corr ≈ 0.95`), while one bouton is shoved ~12 px out
+of its ROI during the strongest bout and its presence collapses to 0 — correctly flagged as
+having disappeared, during running, not at rest.
 
 ## Use
 
 ```python
 from tracetrust import assess
 
-# stack: (T, H, W) motion-corrected movie; rois: {name: (cy, cx, half_box)}
-report = assess(stack, rois)
-report["MyBouton"]["verdict"]              # 'trustworthy' | 'residual-motion' | 'z-drift'
-report["MyBouton"]["residual_shift_px"]    # tracked xy displacement
-report["MyBouton"]["zdrift_excess"]        # resting-F decline beyond the FOV median
+# stack: (T,H,W) ALREADY motion-corrected movie; rois: {name:(cy,cx,half_box)}; run: (T,) optional
+report = assess(stack, rois, fps, run=running_trace)
+report["MyBouton"]["max_shift_px"]       # residual in-plane shift of this bouton's pixels
+report["MyBouton"]["disappeared"]        # did it ever leave the FOV / defocus out?
+report["MyBouton"]["motion_flag"]        # per-frame: untrustworthy?
+report["MyBouton"]["run_corr"]           # is the residual motion locomotion-locked?
 ```
 
 ## Run the example
@@ -57,12 +59,12 @@ pytest
 
 ## Limitations
 
-The z-drift check needs several ROIs to estimate the FOV-wide bleaching (the median decline);
-with one ROI there is nothing to compare against. It assumes photobleaching is roughly uniform
-across the field. Residual-motion tracking needs the bouton to stay partly inside its ROI box
-(a bouton that slides fully out becomes untrackable — which is itself a red flag). z is inferred
-from brightness, not measured optically; a true z-stack (see the `cross-session-registration`
-tile) resolves z directly.
+The residual displacement is measured against a still template (the per-pixel median over time),
+so it assumes the bouton is present for most of the recording. Presence uses the registration's
+correlation peak, which drops for both lateral loss and z-defocus but does not by itself say
+*which* — a true z-stack (see `cross-session-registration`) resolves z directly. This flags WHERE
+the tissue moved and where a bouton is untrustworthy; it does not try to separate a real
+movement-driven neural response from the motion artifact.
 
 ## License
 

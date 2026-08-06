@@ -1,19 +1,19 @@
-"""A synthetic 2-photon movie of three boutons, each with a known trustworthiness problem.
+"""An ALREADY motion-corrected 2-photon movie — where correction left residuals per bouton.
 
-After 2-D motion correction a bouton's trace is only trustworthy if the ROI keeps measuring the
-SAME bouton for the whole recording. Two ways that fails, plus a clean control — all under a
-mild global photobleaching so the z-drift detector has to separate a bouton's own dimming from
-the FOV-wide bleaching:
+Global motion correction (Suite2p) removes the average frame shift, but the tissue does not move
+as one rigid block: when the animal runs or moves, different parts of the field move by different
+amounts, so each bouton keeps its OWN residual shift. And a big enough bout can push a bouton out
+of its ROI — or out of the focal plane (z) — so that, for those frames, the ROI is measuring
+background, not the bouton, no matter how good the global correction was.
 
-  * stable  — fixed position, steady brightness            → trustworthy
-  * xy_drift — the bouton slowly slides in x, y            → residual motion after MC
-  * z_drift  — the bouton dims as it leaves the focal plane → falsely "silent" (a z-artifact,
-               not a real drop in activity)
-
-Suite2p corrects x, y but not z, so z-drift is invisible to it: the bouton's brightness falls
-and the trace reads as going quiet even though the cell never changed its firing.
+This synthetic is the corrected movie: boutons fire independently of a **running** signal; during
+running bouts each bouton gets its own residual in-plane jitter (non-uniform across the field),
+the whole FOV dims/defocuses a little (z), and ONE bouton is shoved clean out of its ROI during
+the strongest bout (it disappears). Ground truth: the running trace, per-bouton residual motion,
+and which bouton disappears when.
 """
 import numpy as np
+from scipy.ndimage import gaussian_filter
 
 FS = 60.0
 
@@ -23,48 +23,76 @@ def _gauss(H, W, cy, cx, sigma, amp):
     return amp * np.exp(-((y - cy) ** 2 + (x - cx) ** 2) / (2 * sigma ** 2))
 
 
-def make_movie(T=1200, H=64, W=64, fps=FS, seed=0):
-    """Return (stack[T,H,W], rois{name:(cy,cx,half)}, fps, truth{name:mode})."""
+def _running_signal(T, fps, seed):
     rng = np.random.RandomState(seed)
-    t = np.arange(T)
+    run = np.zeros(T)
+    bouts = []
+    for _ in range(3):
+        c = rng.randint(int(2 * fps), T - int(2 * fps))
+        w = int(rng.uniform(0.9, 1.6) * fps)
+        seg = np.exp(-((np.arange(T) - c) ** 2) / (2 * (w / 2.5) ** 2))
+        amp = rng.uniform(0.7, 1.0)
+        run += amp * seg
+        bouts.append((c, amp))
+    return np.clip(run, 0, 1), bouts
+
+
+def make_movie(T=1200, H=64, W=64, fps=FS, seed=0):
+    """Return (stack[T,H,W], rois{name:(cy,cx,half)}, fps, truth)."""
+    rng = np.random.RandomState(seed)
     sigma = 1.6
+    centres = {"b0": (16, 16), "b1": (16, 48), "b2": (46, 22), "b3": (44, 46)}
+    half = 6
 
-    # each bouton fires the same sparse event train (so a dimming is clearly NOT less firing)
-    onsets = np.sort(rng.choice(np.arange(30, T - 60), size=14, replace=False))
-    fire = np.zeros(T)
-    for o in onsets:
-        fire[o:] += rng.uniform(0.6, 1.2) * np.exp(-(np.arange(T - o)) / (0.6 * fps))
+    fire = {}
+    for name in centres:
+        onsets = np.sort(rng.choice(np.arange(30, T - 60), size=10, replace=False))
+        f = np.zeros(T)
+        for o in onsets:
+            f[o:] += rng.uniform(0.7, 1.3) * np.exp(-(np.arange(T - o)) / (0.6 * fps))
+        fire[name] = f
 
-    boutons = {
-        "stable":   dict(cy=16, cx=16, mode="stable"),
-        "xy_drift": dict(cy=16, cx=48, mode="xy_drift"),
-        "z_drift":  dict(cy=46, cx=32, mode="z_drift"),
-    }
-    base_amp = 900.0
-    event_amp = 500.0
+    run, bouts = _running_signal(T, fps, seed)
+    strongest = max(range(len(bouts)), key=lambda i: bouts[i][1])
+    strong_c = bouts[strongest][0]
 
-    stack = np.zeros((T, H, W), np.float32)
+    # per-bouton residual in-plane motion (each a different fraction of run — non-uniform field)
+    res_amp = {"b0": 1.2, "b1": 1.8, "b2": 1.0, "b3": 1.5}
+    local = {}
+    for name in centres:
+        j = rng.normal(0, 1, (T, 2))
+        j = np.stack([np.convolve(j[:, 0], np.ones(5) / 5, "same"),
+                      np.convolve(j[:, 1], np.ones(5) / 5, "same")], axis=1)
+        local[name] = (run[:, None] * res_amp[name]) * j
+
+    # b3 is shoved clean out of its ROI (> half) during the strongest bout: it disappears
+    gone = np.exp(-((np.arange(T) - strong_c) ** 2) / (2 * (0.5 * fps) ** 2))
+    local["b3"] = local["b3"] + gone[:, None] * np.array([14.0, 14.0])
+
+    zdefocus = run * 0.45                                   # global z-defocus during bouts
+    base_amp, event_amp = 900.0, 500.0
+
+    stack = np.empty((T, H, W), np.float32)
     for f in range(T):
         frame = np.zeros((H, W))
-        for b in boutons.values():
-            cy, cx = float(b["cy"]), float(b["cx"])
-            amp = base_amp + event_amp * fire[f]
-            if b["mode"] == "xy_drift":
-                cy += 4.0 * f / T                    # slides ~4 px in y and x over the movie
-                cx += 4.0 * f / T
-            elif b["mode"] == "z_drift":
-                amp *= np.exp(-3.0 * f / T)          # dims to ~5% as it defocuses out of plane
-            frame += _gauss(H, W, cy, cx, sigma, amp)
+        for name, (cy, cx) in centres.items():
+            amp = base_amp + event_amp * fire[name][f]
+            dy, dx = local[name][f]
+            frame += _gauss(H, W, cy + dy, cx + dx, sigma, amp)
+        if zdefocus[f] > 1e-3:
+            frame = gaussian_filter(frame * (1 - zdefocus[f]), sigma=2.0 * zdefocus[f])
         stack[f] = frame
 
-    stack *= np.exp(-0.22 * t / T)[:, None, None]     # mild global photobleaching (~20% by end)
+    stack *= np.exp(-0.15 * np.arange(T) / T)[:, None, None]    # mild photobleaching
     stack += rng.normal(0, 12.0, stack.shape)
 
-    rois = {name: (b["cy"], b["cx"], 6) for name, b in boutons.items()}   # FIXED ROI boxes
-    truth = {name: b["mode"] for name, b in boutons.items()}
+    rois = {name: (cy, cx, half) for name, (cy, cx) in centres.items()}
+    truth = {"run": run, "local": local, "disappears": "b3", "disappear_frame": int(strong_c),
+             "fps": fps}
     return stack.astype(np.float32), rois, fps, truth
 
 
 if __name__ == "__main__":
     stack, rois, fps, truth = make_movie()
-    print(f"stack {stack.shape}, rois {list(rois)}, truth {truth}")
+    print(f"stack {stack.shape}, rois {list(rois)}, {truth['disappears']} disappears "
+          f"~frame {truth['disappear_frame']}")

@@ -1,19 +1,20 @@
-"""Trace trustworthiness after 2-D motion correction: is the ROI still measuring the same bouton?
+"""Per-ROI residual-motion trustworthiness on an already motion-corrected movie.
 
-Suite2p corrects x and y but not z. Two failure modes survive it, and both make a trace lie:
+Global motion correction removes the average frame shift, but the tissue is not rigid: when the
+animal runs or moves, each bouton keeps its OWN residual shift (the field moves non-uniformly),
+and a big enough bout can push a bouton out of its ROI or out of the focal plane (z) so the ROI
+measures background, not the bouton. The question is asked PER ROI, on that bouton's own pixels.
 
-* **residual xy motion** — the ROI keeps sliding across the sensor, mixing in neighbouring
-  pixels. Caught by tracking the bouton's patch over time with the real pipeline registration
-  engine (``register_fov_xy``): the residual displacement grows bin after bin.
-* **z-drift** — the bouton drifts out of the focal plane, dims, and its trace reads as going
-  quiet even though the cell never changed its firing. Caught by comparing the bouton's own
-  resting-fluorescence decline to the FOV-wide decline (photobleaching): a bouton that dims
-  *faster than the field*, while its patch stays put, is z-drifting — a false silence, not a
-  real one. The z-drift detector is the tile's own contribution.
+``assess`` registers each ROI's local patch to a still template with the pipeline's
+``register_fov_xy`` and reads two things from it per frame: the **residual displacement**
+(how far this bouton's pixels shifted after correction) and the **presence** (the post-alignment
+correlation peak — it collapses when the bouton has left the FOV laterally or by z-defocus). It
+flags untrustworthy frames per bouton, catches boutons that disappear, and — given a running
+trace — shows the residual motion is movement-locked.
 
-``register_fov_xy`` is an independent COPY of the pipeline function, synced into ``_synced.py``
-by ``_sync/sync.py``. Fix the maths in the pipeline, then re-run the sync.
+``register_fov_xy`` is an independent COPY of the pipeline function, synced into ``_synced.py``.
+Fix the maths in the pipeline, then re-run the sync.
 """
-from .trust import assess, residual_xy, resting_f, roi_trace
+from .trust import assess, roi_motion
 
-__all__ = ["assess", "residual_xy", "resting_f", "roi_trace"]
+__all__ = ["assess", "roi_motion"]
