@@ -53,6 +53,28 @@ TILES: dict[str, dict] = {
             "tile's own contribution and lives in significance.py, not here."
         ),
     },
+    "trace-qc": {
+        "dest": "traceqc/_synced.py",
+        "header": (
+            "from __future__ import annotations\n"      # type aliases live only in annotations
+            "from enum import Enum\n"
+            "import numpy as np\n"
+            "from scipy.optimize import curve_fit\n"
+            "MAD_TO_STD = 1.4826  # MAD -> Gaussian sigma (1 / norm.ppf(0.75))\n"
+        ),
+        "extracts": [
+            ("lib/core/enums.py", ["QualityGrade"]),
+            ("lib/qc/snr_metrics.py", ["calculate_snr_per_trace"]),
+            ("lib/qc/photobleaching.py", ["fit_exponential_decay"]),
+        ],
+        "note": (
+            "Real per-trace calcium QC that applies to ANY trace (soma or bouton): SNR (MAD-based "
+            "noise floor) + A–F grade, and an exponential photobleaching fit (r² gates a spurious "
+            "decay). Two trace-INTRINSIC failure modes a single SNR cutoff can't both see. (Neuropil "
+            "contamination is a soma-imaging concern, not applied to boutons; motion/spatial "
+            "trustworthiness — z-drift, residual xy — lives in the trace-trustworthiness tile.)"
+        ),
+    },
     "cross-session-registration": {
         "dest": "xsession/_synced.py",
         "header": (

@@ -21,6 +21,7 @@ one, on real data, with a before/after figure").
 | [pupil-tracking](methods/pupil-tracking) | a per-frame pupil detector run across a video with temporal consistency, so blinks and distractors don't break the pupil-size trace |
 | [dff-baseline](methods/dff-baseline) | a rolling median baseline, left unclipped, so ΔF/F sits symmetric around zero instead of biased up by a lower-envelope |
 | [osi-stats](methods/osi-stats) | orientation selectivity called with a shuffle test and population FDR, so a bare OSI threshold's positive-bias false positives are controlled |
+| [trace-qc](methods/trace-qc) | two per-trace quality gates on their proper representations: SNR (MAD-based noise floor) graded on ΔF/F, and a photobleaching fit on the raw fluorescence |
 
 ![group motion correction: a shared reference aligns the recordings](methods/group-motion-correction/figures/before_after.png)
 
