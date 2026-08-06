@@ -19,6 +19,7 @@ one before/after figure*.
 | [osi-stats](methods/osi-stats) | orientation selectivity called with a shuffle test + population FDR, not a bare OSI threshold |
 | [trace-qc](methods/trace-qc) | two per-trace gates on their proper representations: SNR (MAD noise floor) on ΔF/F, photobleaching fit on raw F |
 | [trace-trustworthiness](methods/trace-trustworthiness) | after motion correction — per-ROI residual motion during running bouts (x, y and z), flagging each bouton's residual shift and catching boutons pushed out of their ROI, where the trace reads background |
+| [mesc-reader](methods/mesc-reader) | read a Femtonics .mesc (it's HDF5) and convert it **raw** to TIFF stacks or a plain HDF5 — no correction, no scaling, frames exactly as stored, with a CLI |
 
 ![a shared reference aligns repeat recordings](methods/group-motion-correction/figures/before_after.png)
 

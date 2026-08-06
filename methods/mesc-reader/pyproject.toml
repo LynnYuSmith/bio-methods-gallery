@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mescreader"
+version = "0.1.0"
+description = "Read a Femtonics .mesc file and convert it, raw, to TIFF or HDF5 — no correction."
+requires-python = ">=3.10"
+dependencies = ["numpy", "h5py", "tifffile"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "gallery-style"]
+
+[project.scripts]
+mescreader = "mescreader.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["mescreader*"]
