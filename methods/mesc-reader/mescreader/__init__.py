@@ -6,6 +6,14 @@ units, reads any channel's frames exactly as stored, and writes them out unchang
 stack per unit/channel, or a plain HDF5 mirror — carrying the metadata so nothing is lost. The
 per-channel linear conversion is reported but never applied: "as-is" means the stored values.
 """
-from .read import list_units, mesc_to_hdf5, mesc_to_tiff, read_frames, read_metadata
+from .read import (
+    channel_conversion,
+    list_units,
+    mesc_to_hdf5,
+    mesc_to_tiff,
+    read_frames,
+    read_metadata,
+)
 
-__all__ = ["list_units", "read_metadata", "read_frames", "mesc_to_tiff", "mesc_to_hdf5"]
+__all__ = ["list_units", "read_metadata", "read_frames", "channel_conversion",
+           "mesc_to_tiff", "mesc_to_hdf5"]

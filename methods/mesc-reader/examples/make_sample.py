@@ -34,16 +34,21 @@ def write_synthetic_mesc(path, *, n_units=2, frames=20, height=32, width=40, n_c
                 datetime.datetime(2026, 1, 1, 12, 0, j).timestamp())
             upath = f"MSession_0/MUnit_{j}"
             truth[upath] = {}
+            # per-channel PMT conversion offsets like a real .mesc: green −786, red −1170
+            offsets = {0: -786, 1: -1170}
             for k in range(n_channels):
-                # a distinct, known pattern per unit/channel: a moving bright square + noise
-                arr = rng.randint(50, 120, size=(frames, height, width)).astype(np.uint16)
+                off = offsets.get(k, -800)
+                # raw counts sit ABOVE the PMT offset, so raw + offset leaves visible signal
+                base_lo = -off + 30                            # background ~ just above the offset
+                arr = rng.randint(base_lo, base_lo + 90, size=(frames, height, width)).astype(np.uint16)
                 for t in range(frames):
                     y0 = (2 + t) % (height - 6)
                     x0 = (3 + 2 * t + 5 * k + 7 * j) % (width - 6)
-                    arr[t, y0:y0 + 6, x0:x0 + 6] += np.uint16(800 + 100 * k)
+                    arr[t, y0:y0 + 6, x0:x0 + 6] += np.uint16(800)   # a bright moving square
                 unit.create_dataset(f"Channel_{k}", data=arr, compression="gzip")
-                unit.attrs[f"Channel_{k}_Conversion_ConversionLinearOffset"] = -393 - k
-                truth[upath][f"Channel_{k}"] = arr
+                unit.attrs[f"Channel_{k}_Conversion_ConversionLinearOffset"] = off        # signed
+                unit.attrs[f"Channel_{k}_Conversion_ConversionLinearScale"] = 1.0
+                truth[upath][f"Channel_{k}"] = {"raw": arr, "offset": off, "scale": 1.0}
     return truth
 
 
