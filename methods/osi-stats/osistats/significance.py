@@ -1,52 +1,24 @@
-"""Tuning significance: a trial-shuffle test on OSI, Benjamini-Hochberg FDR, a bootstrap
-CI, and a Rayleigh test.
+"""Tuning significance: a trial-shuffle test on OSI, Benjamini-Hochberg FDR, and a
+bootstrap CI. The OSI point estimate and the Rayleigh test are independent COPIES of the
+pipeline (in ``_synced.py``); the population shuffle+FDR call here is the tile's OWN
+contribution — the pipeline decides tuning with the analytic Rayleigh test, not this
+shuffle, so there is nothing upstream to copy for it.
 
 The honest population call uses the **shuffle test**: the OSI point estimate is positively
 biased, but its bias is exactly what a shuffle reproduces — permute the per-trial responses
 across orientation slots, recompute OSI, and the observed OSI is significant only if it
-beats that biased null. Shuffle p-values are valid (uniform under the null), so
-**Benjamini-Hochberg FDR** across the population genuinely controls the false-discovery
-rate. (A Rayleigh test on the mean responses is provided too, but a Rayleigh test on
-rectified baseline-subtracted responses has a non-uniform null, so it is not the basis of
-the population call.)
+beats that biased null. The shuffle p is z-scored (continuous, not floored at 1/n_shuffle),
+so **Benjamini-Hochberg FDR** across the population can still reach significance and
+genuinely controls the false-discovery rate. (The synced ``rayleigh_test`` is provided as a
+utility, but a Rayleigh test on rectified baseline-subtracted responses has a non-uniform
+null, so it is not the basis of this population call.)
 """
 from __future__ import annotations
 
 import numpy as np
 
+from ._synced import rayleigh_test  # noqa: F401 — real pipeline Rayleigh test, re-exported
 from .selectivity import osi
-
-
-def rayleigh_test(angles_deg, weights=None) -> tuple[float, float]:
-    """Rayleigh test for non-uniformity of circular data → ``(z, p)``.
-
-    The weights (the response across orientations) set the resultant-vector length ``r``,
-    but the sample size for the z-statistic is the **number of sampled directions**, not
-    Kish's effective n on the weights — Kish inverts the test's power for tuning (a sharply
-    tuned cell would collapse to n_eff≈1 and never reach significance). Closed form from
-    Fisher (1993), *Statistical Analysis of Circular Data*, §4.4.
-    """
-    angles_deg = np.asarray(angles_deg, dtype=float)
-    n = len(angles_deg)
-    if n < 2:
-        return np.nan, np.nan
-    ang = np.deg2rad(angles_deg)
-    w = np.ones(n) if weights is None else np.asarray(weights, dtype=float)
-    w = np.maximum(w, 0.0)                      # circular weights are magnitudes (≥0)
-    w_sum = w.sum()
-    if not np.isfinite(w_sum) or w_sum <= 0:
-        return np.nan, np.nan
-    w = w / w_sum
-    x = np.sum(w * np.cos(ang))
-    y = np.sum(w * np.sin(ang))
-    r = np.hypot(x, y)
-    z = n * r ** 2
-    p = np.exp(-z) * (
-        1
-        + (2 * z - z ** 2) / (4 * n)
-        - (24 * z - 132 * z ** 2 + 76 * z ** 3 - 9 * z ** 4) / (288 * n ** 2)
-    )
-    return float(z), float(np.clip(p, 0, 1))
 
 
 def shuffle_test_osi(trials, orientations, n_shuffle: int = 500, seed: int = 0) -> tuple[float, float]:

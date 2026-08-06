@@ -1,8 +1,8 @@
-"""Show the contribution: a bare OSI threshold vs an honest call (Rayleigh + FDR).
+"""Show the contribution: a bare OSI threshold vs an honest call (shuffle test + FDR).
 
 Left — the OSI point estimate is positively biased, so a threshold (OSI > 0.33) flags a
-crowd of genuinely UNTUNED boutons as tuned. Right — the Rayleigh p-value with
-Benjamini-Hochberg FDR across the population separates the real tuning from the bias."""
+crowd of genuinely UNTUNED boutons as tuned. Right — a z-scored shuffle test on OSI, with
+Benjamini-Hochberg FDR across the population, separates the real tuning from the bias."""
 from pathlib import Path
 
 import matplotlib

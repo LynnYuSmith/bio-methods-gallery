@@ -61,6 +61,18 @@ lab. Each is sorted before publication:
 
 One conscious step per tile.
 
+## Faithful to the pipeline (sync)
+
+Where a tile shows a real lab-pipeline method, its core maths is an **independent copy** of the actual
+pipeline function — not a parallel reimplementation that drifts and rots (a divergent copy is how a
+standalone tool once shipped a bug the live code never had). `_sync/` lifts the named functions out of
+the private pipeline, **de-identifies** them (strips recording IDs / names / paths, with a fail-loud
+guard), stamps provenance (source + commit + date), and writes each tile's generated `_synced.py`. A
+fix flows one way: fix the pipeline, re-run `python _sync/sync.py`, and any drift shows in the tile's
+diff. Not git submodules — that would embed the private repo and defeat de-identification. Some tiles
+have no lab-owned function to copy (the workflow *is* the tile's contribution, or the engine is
+third-party like Suite2p); those stay tile-original. Details + the per-tile table: [`_sync/README.md`](_sync/README.md).
+
 ## Index
 
 `ROADMAP.md` lists the planned tiles (a calcium set, an RNA-seq set, a proteomics set), each with its

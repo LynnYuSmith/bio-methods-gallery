@@ -11,9 +11,14 @@ the baseline lands in the noise, and with it what ΔF/F looks like:
   positive bias, with one-sided noise.
 
 Keeping the median baseline unclipped is the contribution.
+
+The estimators are independent COPIES of the real lab-pipeline functions (``rolling_baseline``,
+``maximin_baseline``), synced verbatim into ``_synced.py`` by ``_sync/sync.py`` and wrapped
+here for a small named API. Fix the maths in the pipeline, then re-run the sync.
 """
 from .baseline import (
     dff,
+    floor_baseline,
     lower_envelope_baseline,
     median_baseline,
     rolling_quantile_baseline,
@@ -23,5 +28,6 @@ __all__ = [
     "rolling_quantile_baseline",
     "median_baseline",
     "lower_envelope_baseline",
+    "floor_baseline",
     "dff",
 ]

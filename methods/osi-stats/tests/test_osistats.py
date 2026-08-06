@@ -47,3 +47,19 @@ def test_honest_has_fewer_false_positives_than_naive():
     assert fp_honest < fp_naive            # FDR controls them
     # and the honest call still recovers most of the genuinely tuned boutons
     assert np.sum(r["honest"] & truth) >= 0.5 * truth.sum()
+
+
+def test_fdr_removes_false_positives_a_raw_threshold_would_keep():
+    # A large PURE-NULL population: an UNCORRECTED p < alpha flags several untuned boutons by
+    # chance; Benjamini-Hochberg across the family must remove them. This exercises the headline
+    # "+FDR" step — on the clean demo data the shuffle test alone already yields 0 FP, so FDR
+    # never bites there and a "no correction" mutation passes unnoticed (adversarial finding).
+    rng = np.random.RandomState(3)
+    ori = np.arange(0, 360, 45).astype(float)
+    T = rng.normal(0.0, 1.0, (200, 8, 6))            # every bouton untuned (pure noise)
+    r = classify_population(T, ori, alpha=0.05, n_shuffle=500, seed=3)
+    raw_fp = int(np.sum(r["pval"] < 0.05))           # what an uncorrected threshold would flag
+    bh_fp = int(np.sum(r["honest"]))                 # what BH-FDR flags
+    assert raw_fp >= 2, raw_fp                        # uncorrected p DOES flag untuned by chance
+    assert bh_fp == 0, bh_fp                          # FDR removes them all on a pure-null family
+    assert bh_fp < raw_fp                             # ...so the FDR step is demonstrably not inert

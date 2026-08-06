@@ -11,8 +11,11 @@ ROI, drawn once, is the same physical structure in every recording. The workflow
     2. Register every frame of every recording to that one reference by whole-frame translation
        (phase correlation), the same rigid shift a per-recording pass uses.
 
-The registration itself is standard (`skimage.registration.phase_cross_correlation`); the point is
-that the reference is shared, so the outputs are directly comparable.
+The registration ENGINE is the pipeline's own ``register_fov_xy`` (phase cross-correlation + prep +
+post-alignment peak), synced verbatim into ``_synced.py``; the point of THIS tile is the shared
+reference — one ROI, drawn once, is the same physical structure in every recording, so the outputs
+are directly comparable. Shifts are reported in the pipeline's SUBTRACT convention (moving→reference
+displacement). Fix the engine in the pipeline, then re-run the sync.
 """
 from __future__ import annotations
 
@@ -20,7 +23,8 @@ from typing import Sequence
 
 import numpy as np
 from scipy.ndimage import shift as nd_shift
-from skimage.registration import phase_cross_correlation
+
+from ._synced import register_fov_xy
 
 
 def reference_from(stack: np.ndarray) -> np.ndarray:
@@ -29,9 +33,16 @@ def reference_from(stack: np.ndarray) -> np.ndarray:
 
 
 def _register_frame(frame: np.ndarray, ref: np.ndarray):
-    """Shift one frame onto `ref` by phase correlation. Returns (registered_frame, (dy, dx))."""
-    (dy, dx), _, _ = phase_cross_correlation(ref, frame, upsample_factor=10)
-    reg = nd_shift(frame, (dy, dx), order=1, mode="nearest")
+    """Shift one frame onto ``ref`` using the pipeline's registration engine.
+
+    ``register_fov_xy`` returns ``(dx, dy)`` in the project SUBTRACT convention — the
+    moving→reference displacement, i.e. the NEGATIVE of skimage's align-shift. To WARP the frame
+    onto the reference we therefore ndi_shift by the negatives ``(-dy, -dx)`` (row, col). Returns
+    ``(registered_frame, (dy, dx))`` with the shift in that same SUBTRACT convention, so the reported
+    shifts match the pipeline's sign (getting this right is the whole ball game — see the CLAUDE.md
+    Critical Shift Convention)."""
+    dx, dy, _peak = register_fov_xy(ref, frame)
+    reg = nd_shift(frame, (-dy, -dx), order=1, mode="nearest")
     return reg, (float(dy), float(dx))
 
 

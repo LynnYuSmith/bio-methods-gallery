@@ -12,6 +12,12 @@ whatever magnification, with a physiological range only as an outer sanity bound
 
 The workflow is the contribution: activity-based detection, plus a size window derived from the
 recording's own active regions, rather than blob detection on a mean image with a fixed size filter.
+
+Provenance note: this tile has no synced ``_synced.py``. In the real pipeline the activity-based
+segmentation engine is Suite2p (third-party), and the pipeline's own blob detector runs on a static
+projection with a config — a different composition. The workflow here is the tile's own, built
+directly on scikit-image, so there is no lab-authored function to copy (cf. the shuffle+FDR call in
+osi-stats, likewise the tile's own).
 """
 from __future__ import annotations
 
