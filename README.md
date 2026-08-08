@@ -25,13 +25,15 @@ one before/after figure*.
 
 ## Companion tools
 
-Standalone apps in their own repos, same spirit (method + synthetic demo + tests). A closed loop: one
-plays the stimulus and writes its protocol, the other decodes it back out of the recording.
+Standalone apps in their own repos, same spirit (method + synthetic demo + tests). Together they form a
+**closed loop on the two-photon rig**: one plays the stimulus and writes its protocol, one decodes that
+protocol back out of the recording, and one reads the mouse's behaviour live and gates the stimulus on it.
 
 | tool | what it does |
 |---|---|
 | [stimulus-runner](https://github.com/LynnYuSmith/stimulus-runner) | browser (WebGL) grating presenter — seamless grey/black ↔ grating, block sequence, RED corner pulse markers, played-protocol export |
 | [stimulus-aligner](https://github.com/LynnYuSmith/stimulus-aligner) | decodes the photodiode pulse markers and aligns that protocol onto the frame-exact timeline |
+| [behavior-trigger](https://github.com/LynnYuSmith/behavior-trigger) | reads running/stationary live from the camera (frame-diff + hysteresis), writes frame+motion into LabChart for cross-modal alignment, and gates the stimulus (pause on run, resume on settle) — a sense→decide→act loop with a measured 67 ms onset latency |
 
 ## Ownership
 
