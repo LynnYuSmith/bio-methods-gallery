@@ -20,6 +20,7 @@ one before/after figure*.
 | [trace-qc](methods/trace-qc) | two per-trace gates on their proper representations: SNR (MAD noise floor) on ΔF/F, photobleaching fit on raw F |
 | [trace-trustworthiness](methods/trace-trustworthiness) | after motion correction — per-ROI residual motion during running bouts (x, y and z), flagging each bouton's residual shift and catching boutons pushed out of their ROI, where the trace reads background |
 | [mesc-reader](methods/mesc-reader) | read a Femtonics .mesc (it's HDF5) → TIFF or HDF5, applying each channel's PMT-offset display conversion by default (loudly; −786 green / −1170 red), with raw/manual overrides and a CLI |
+| [mesc-motion-correct](methods/mesc-motion-correct) | group motion correction — one shared reference from the first unit registers a whole train of .mesc repeats onto the same grid; offset and pixel size read from the file; .mesc in → .mesc out |
 
 ![a shared reference aligns repeat recordings](methods/group-motion-correction/figures/before_after.png)
 

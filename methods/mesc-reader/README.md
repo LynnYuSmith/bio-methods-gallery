@@ -9,7 +9,7 @@ rescaling the file doesn't already declare.
 the production pipeline's MESc handling is entangled with motion correction — a standalone reader
 + converter is the contribution).
 
-![each channel's stored counts sit on a PMT offset (−786 green, −1170 red); applying the conversion drops the background to zero and leaves the signal](figures/before_after.png)
+![each channel's pixel values sit on a PMT pedestal (−786 green, −1170 red); the histogram shows the whole distribution sliding off it so the background pile lands at true zero, the value MESc displays](figures/before_after.png)
 
 ## The idea
 

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mescmc"
+version = "0.1.0"
+description = "Group (concat) motion correction for Femtonics .mesc: one shared reference over a train of repeats, .mesc in → .mesc out."
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy", "h5py"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "gallery-style"]
+
+[project.scripts]
+mescmc = "mescmc.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["mescmc*"]
