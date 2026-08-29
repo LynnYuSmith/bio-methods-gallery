@@ -39,8 +39,8 @@ def _register_frame(frame: np.ndarray, ref: np.ndarray):
     moving→reference displacement, i.e. the NEGATIVE of skimage's align-shift. To WARP the frame
     onto the reference we therefore ndi_shift by the negatives ``(-dy, -dx)`` (row, col). Returns
     ``(registered_frame, (dy, dx))`` with the shift in that same SUBTRACT convention, so the reported
-    shifts match the pipeline's sign (getting this right is the whole ball game — see the CLAUDE.md
-    Critical Shift Convention)."""
+    shifts match the pipeline's sign. Getting this right is the whole ball game: a flipped sign moves
+    every frame the wrong way and the error looks like bad data, not bad code."""
     dx, dy, _peak = register_fov_xy(ref, frame)
     reg = nd_shift(frame, (-dy, -dx), order=1, mode="nearest")
     return reg, (float(dy), float(dx))

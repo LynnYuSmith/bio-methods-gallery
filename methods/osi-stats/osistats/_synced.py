@@ -4,7 +4,7 @@ Real OSI point estimate (direction→orientation folding + negative-response rec
 
 These are independent copies of the real lab-pipeline functions, de-identified for
 the public gallery. To update: fix the pipeline, then re-run `python _sync/sync.py`.
-Provenance (pipeline @ b1c91757, synced 2026-08-06):
+Provenance (pipeline @ d46072dc, synced 2026-08-29):
 # lib/analysis/selectivity.py :: calculate_osi, rayleigh_test
 """
 # fmt: off
@@ -47,7 +47,7 @@ def calculate_osi(responses: np.ndarray, orientations: np.ndarray,
     if not np.any(valid_mask):
         return np.nan
 
-    # Rectify negative responses to 0 before folding (the lab 2026-06-03).
+    # Rectify negative responses to 0 before folding.
     # On zero-centered dF/F (median baseline) the orthogonal/null response can be
     # negative (noise or active suppression). Without rectification a negative
     # R_orth makes denom = R_pref + R_orth small or ≤ 0 → OSI overshoots (clipped
@@ -129,7 +129,7 @@ def rayleigh_test(angles_deg: np.ndarray, weights: np.ndarray = None) -> tuple:
         weights = np.ones(n_obs)
 
     weights = np.asarray(weights, dtype=float)
-    # Rectify negative weights to 0 (the lab 2026-06-03, axis D). Circular
+    # Rectify negative weights to 0. Circular
     # weights are magnitudes (≥0) by definition; on zero-centered dF/F a response
     # can be negative, and a negative weight would push the resultant vector AWAY
     # from that orientation, distorting r → z → p. preferred_orientation_circular

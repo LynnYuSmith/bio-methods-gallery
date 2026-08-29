@@ -4,7 +4,7 @@ Real cross-session FOV registration: 2-D (register_fov_xy) and full 3-D volume r
 
 These are independent copies of the real lab-pipeline functions, de-identified for
 the public gallery. To update: fix the pipeline, then re-run `python _sync/sync.py`.
-Provenance (pipeline @ 4ec606b9, synced 2026-08-06):
+Provenance (pipeline @ d46072dc, synced 2026-08-29):
 # lib/roi/cross_session.py :: CrossSessionFOVResult, _prep_image, _prep_volume, _alignment_peak_corr, _alignment_peak_corr_3d, register_fov_xy, register_zstack_3d, match_boutons_cross_session
 """
 # fmt: off
@@ -93,7 +93,7 @@ def register_fov_xy(ref_img: np.ndarray, mov_img: np.ndarray,
     # We return the project SUBTRACT convention instead: the moving→reference DISPLACEMENT
     # (ref_coord = mov_coord − (dx, dy)), which is the NEGATIVE of skimage's align-shift. This is the
     # one that match_boutons_cross_session subtracts — getting this sign right is the whole ball game
-    # (see CLAUDE.md "Critical Shift Convention").
+    #.
     dy, dx = -float(shift[0]), -float(shift[1])
     peak = _alignment_peak_corr(ref, mov, dx, dy)
     return dx, dy, peak

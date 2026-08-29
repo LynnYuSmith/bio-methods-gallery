@@ -4,7 +4,7 @@ Real per-trace calcium QC that applies to ANY trace (soma or bouton): SNR (MAD-b
 
 These are independent copies of the real lab-pipeline functions, de-identified for
 the public gallery. To update: fix the pipeline, then re-run `python _sync/sync.py`.
-Provenance (pipeline @ 4ec606b9, synced 2026-08-06):
+Provenance (pipeline @ d46072dc, synced 2026-08-29):
 # lib/core/enums.py :: QualityGrade
 # lib/qc/snr_metrics.py :: calculate_snr_per_trace
 # lib/qc/photobleaching.py :: fit_exponential_decay
@@ -96,7 +96,7 @@ def calculate_snr_per_trace(trace: np.ndarray, fs: float = 60.0,
             'quality_score': 0.0
         }
 
-    # Noise estimation: MAD of the FULL trace × MAD_TO_STD (the lab 2026-05-23).
+    # Noise estimation: MAD of the FULL trace × MAD_TO_STD.
     # The old formula used std of the bottom 25% of the trace, which assumes a
     # lower-envelope baseline (positive-shifted dF/F with noise at the bottom of
     # the distribution). For zero-centered dF/F (median baseline, the current

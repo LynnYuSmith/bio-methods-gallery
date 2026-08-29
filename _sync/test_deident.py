@@ -1,9 +1,12 @@
 """Tests for the de-identification guard. Run: python _sync/test_deident.py (or pytest)."""
+import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from deident import assert_clean, deidentify  # noqa: E402
+from deident import (  # noqa: E402
+    assert_clean, deidentify, load_private_names, name_rules,
+)
 
 
 def _raises(text):
@@ -15,15 +18,16 @@ def _raises(text):
 
 
 def test_underscore_dated_id_is_substituted_and_clean():
-    # the lab's most common form <mouse>_<yymmdd> — the old \b-anchored rule let this pass
-    out = deidentify("session cm027_260728_axon_fixtest ran")
-    assert "cm027" not in out and "260728" not in out, out
+    # the common form <mouse>_<yymmdd> — the old \b-anchored rule let this pass.
+    # IDs here are invented (this repo is public): same shape, no real recording.
+    out = deidentify("session cm999_990101_axon_fixtest ran")
+    assert "cm999" not in out and "990101" not in out, out
     assert_clean(out, "test")            # must not raise
 
 
 def test_bare_and_spaced_ids_substituted():
-    assert "cf016" not in deidentify("recorded cf016 today")
-    assert "abm010" not in deidentify("mouse abm010")
+    assert "cf999" not in deidentify("recorded cf999 today")
+    assert "abm999" not in deidentify("mouse abm999")
 
 
 def test_fresh_unknown_prefix_trips_the_guard():
@@ -43,10 +47,46 @@ def test_doi_isbn_not_flagged():
     assert_clean("Mazurek 2014, DOI:10.3389/fncir.2014.00092", "test")
 
 
-def test_paths_and_names_still_caught():
+def test_paths_still_caught():
     assert _raises("/Users/someone/x")
-    assert _raises("per Polinka 2026")
-    assert _raises("Sonja's detector")
+
+
+def test_private_name_list_drives_the_name_rules():
+    """Names live in a gitignored file, not in this public source — test the mechanism."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as d:
+        f = Path(d) / "private_names.txt"
+        f.write_text("# a comment\nBloggs\n\nJane\nSECRET.md = the docs\n", encoding="utf-8")
+        names = load_private_names(f)
+        assert names == [("Bloggs", "the lab"), ("Jane", "the lab"),
+                         ("SECRET.md", "the docs")], names
+
+        subs, forbidden = name_rules(names)
+        text = "Bloggs's method, reviewed by Jane"
+        for pat, repl in subs:
+            text = re.sub(pat, repl, text)
+        assert "Bloggs" not in text and "Jane" not in text, text
+        assert any(re.search(pat, "per Bloggs 2026") for pat, _ in forbidden)
+
+
+def test_missing_name_file_yields_no_rules():
+    assert load_private_names(Path("/nonexistent/private_names.txt")) == []
+
+
+def test_parenthetical_cross_reference_is_dropped():
+    """A "(see <private doc>)" aside is noise in a public tile — the whole aside goes."""
+    subs, _ = name_rules([("SECRET.md", "the docs")])
+    text = '    # the sign matters (see SECRET.md "Shift Convention")'
+    for pat, repl in subs:
+        text = re.sub(pat, repl, text)
+    assert text == "    # the sign matters", repr(text)
+
+
+def test_configured_tokens_trip_the_guard():
+    _, forbidden = name_rules([("Bloggs", "the lab"), ("SECRET.md", "the docs")])
+    assert all(any(re.search(pat, s) for pat, _ in forbidden)
+               for s in ("per Bloggs 2026", "see SECRET.md"))
 
 
 def test_code_indentation_preserved():

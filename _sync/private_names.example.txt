@@ -1,0 +1,16 @@
+# Copy this to `private_names.txt` (gitignored) and list every token that must never appear in a
+# public tile: personal names, and the names of internal tools or docs the pipeline references.
+#
+#   token                  → replaced with "the lab"
+#   token = replacement    → replaced with your own wording
+#
+# Matching is case-insensitive and word-bounded. Per token the de-identifier first drops any
+# parenthetical that mentions it (a cross-reference to something private is noise in a public
+# tile), then the possessive form, then the bare token.
+#
+# `sync.py` refuses to run without `private_names.txt`, so the list cannot silently go missing.
+#
+# Example:
+# Doe
+# Jane
+# INTERNAL_NOTES.md = the project's conventions doc

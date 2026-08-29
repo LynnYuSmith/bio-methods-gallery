@@ -1,9 +1,14 @@
 # Roadmap: planned tiles
 
-Three sets. Each tile names the established method it is benchmarked against (the gallery's premise is
-a comparison: this method versus the standard one, on real data, with one before/after figure) and its
-ownership tier (hers and novel; wrapper on open tools; lab IP, needs consent). Ordering is by
-novelty, clean-separability, ownership-clearability, and effort.
+Three sets. Each tile names the established method it is benchmarked against — the gallery's premise
+is a comparison: this method versus the standard one, on a synthetic example that ships with the tile,
+in one before/after figure.
+
+Licensing is settled for everything here (MIT, copyright Universität Tübingen — see the
+[README](README.md)). The **tier** column is about provenance and release timing, not licence: *hers*
+is a novel contribution, *wrapper* is a thin layer over an open tool that gets named, and *lab-IP*
+marks a method whose scientific claim is still unpublished — that one waits for the paper. Ordering is
+by novelty, clean-separability, and effort.
 
 ---
 

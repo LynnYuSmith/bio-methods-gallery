@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: "Bio-methods gallery"
+message: "If you use this software or one of its methods, please cite it."
+type: software
+authors:
+  - given-names: "Polina Yu"
+    family-names: "Koval"
+    affiliation: "Eberhard Karls Universität Tübingen"
+    orcid: "https://orcid.org/0000-0002-6598-6574"
+repository-code: "https://github.com/LynnYuSmith/bio-methods-gallery"
+abstract: >-
+  Small, self-contained bio-imaging and bioinformatics methods. Each tile stands
+  alone, runs in a minute, and answers one question — this method against the
+  established one, on a synthetic example, with one before/after figure.
+keywords:
+  - calcium imaging
+  - two-photon microscopy
+  - image registration
+  - motion correction
+  - signal processing
+license: MIT
+year: 2026

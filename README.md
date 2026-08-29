@@ -1,10 +1,16 @@
 # Bio-methods gallery
 
-Small, self-contained bioinformatics and bio-imaging methods. Each tile stands alone, runs in a
-minute, and answers one question — usually *this method vs the established one, on real data,
-one before/after figure*.
+[![tests](https://github.com/LynnYuSmith/bio-methods-gallery/actions/workflows/tests.yml/badge.svg)](https://github.com/LynnYuSmith/bio-methods-gallery/actions/workflows/tests.yml)
 
-> Private, in progress. Tiles go public one at a time, each after its ownership check and a clean pass.
+Small, self-contained bioinformatics and bio-imaging methods. Each tile stands alone, runs in a
+minute, and answers one question — *this method against the established one, on a synthetic example
+that ships with it, in one before/after figure*.
+
+Every tile carries its own generator (`examples/make_sample.py`), so nothing here needs lab data:
+clone it, run it, and the figure rebuilds itself.
+
+> Open and in progress — MIT, copyright Universität Tübingen. Please cite it if it helps your work
+> ([CITATION.cff](CITATION.cff)).
 
 ## Methods
 
@@ -36,16 +42,17 @@ protocol back out of the recording, and one reads the mouse's behaviour live and
 | [stimulus-aligner](https://github.com/LynnYuSmith/stimulus-aligner) | decodes the photodiode pulse markers and aligns that protocol onto the frame-exact timeline |
 | [behavior-trigger](https://github.com/LynnYuSmith/behavior-trigger) | reads running/stationary live from the camera (frame-diff + hysteresis), writes frame+motion into LabChart for cross-modal alignment, and gates the stimulus (pause on run, resume on settle) — a sense→decide→act loop with a measured 67 ms onset latency |
 
-## Ownership
+## Ownership and attribution
 
-Some methods originate in work owned by Eberhard Karls Universität Tübingen and the Garaschuk lab. Each
-tile is sorted before it goes public:
+These methods come out of work at Eberhard Karls Universität Tübingen (Garaschuk lab), which holds the
+copyright; they are released open under [MIT](LICENSE) with a request to cite.
 
-| tier | action |
-|---|---|
-| hers and novel | open with attribution |
-| wrapper on open tools (Suite2p, CaImAn, scanpy) | cite, keep the wrapper thin |
-| lab IP (a lab method or unpublished result) | explicit lab consent first |
+- **Thin wrappers stay thin, and name what they wrap** — Suite2p, CaImAn, scikit-image, scanpy do the
+  heavy lifting where a tile says so; the contribution is the workflow around them.
+- **Borrowed pieces are credited** — the per-frame pupil detector behind `pupil-tracking` is Sonja
+  Nevelchuk's, reimplemented clean-room with permission; the tracking layer is the contribution.
+- **Unpublished science is not here.** A method whose scientific claim is still unpublished waits for
+  the paper; the gallery ships methods, and each demo runs on synthetic data, never on lab recordings.
 
 ## Sync — faithful to the pipeline
 
@@ -65,3 +72,22 @@ function to copy stay tile-original. See [`_sync/README.md`](_sync/README.md).
 
 Every tile draws through `gallery_style` (Crameri colour maps, quiet white ground, journal axis labels
 `quantity, unit`): `pip install -e ../../gallery_style`.
+
+## Running the tests
+
+Each tile is a standalone project, so they are run one at a time (their test modules share names,
+which a single root-level `pytest` run cannot import together):
+
+```bash
+./run_tests.sh              # every tile + the sync guard
+./run_tests.sh dff-baseline # one tile
+```
+
+## License
+
+Open source under the [MIT License](LICENSE) — free to read, run, modify and build on.
+Copyright (C) 2026 Eberhard Karls Universität Tübingen / [Polina Yu Koval].
+
+**Please cite it.** If a method here contributes to work you publish or present, cite the
+repository — the entry is in [CITATION.cff](CITATION.cff) (GitHub's "Cite this repository"
+button reads it). The licence also carries terms of use regarding russia's war against Ukraine.

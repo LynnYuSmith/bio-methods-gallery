@@ -27,7 +27,7 @@ _HERE = Path(__file__).resolve().parent
 GALLERY_ROOT = _HERE.parent
 sys.path.insert(0, str(_HERE))
 
-from deident import assert_clean, deidentify  # noqa: E402
+from deident import NAMES_FILE, assert_clean, deidentify, load_private_names  # noqa: E402
 from manifest import PIPELINE_DEFAULT, TILES  # noqa: E402
 
 
@@ -113,6 +113,15 @@ def main() -> int:
                     help="verify tiles are in sync; exit 1 if any is stale (no writes)")
     args = ap.parse_args()
 
+    if not load_private_names():
+        print(
+            f"[sync] refusing to run: no personal-name list at {NAMES_FILE}.\n"
+            f"       Copy _sync/private_names.example.txt to private_names.txt and fill it in —\n"
+            f"       without it the de-identifier cannot scrub names and could leak them into a\n"
+            f"       public tile.",
+            file=sys.stderr,
+        )
+        return 2
     repo = Path(args.repo).resolve()
     if not repo.exists():
         print(f"[sync] pipeline repo not found: {repo}", file=sys.stderr)

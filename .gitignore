@@ -13,3 +13,9 @@ examples/sample_master.h5
 .idea/
 **/examples/raw/
 **/examples/out/
+
+# JetBrains project config — local, not part of the gallery
+.idea/
+
+# Personal names the de-identifier scrubs: private by design, never published
+_sync/private_names.txt

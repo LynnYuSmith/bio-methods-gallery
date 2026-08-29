@@ -3,8 +3,8 @@
 Turn a per-frame pupil detector into one clean pupil-size trace, by running it across the
 video with temporal consistency.
 
-**Ownership tier:** mixed, with consent. The per-frame detector is Sonja Nevelchuk's
-algorithm (used with permission); the tracking tool shown here is the contribution.
+**Credit:** the per-frame detector is **Sonja Nevelchuk's** algorithm, reimplemented clean-room
+with her permission; the tracking layer shown here is the contribution.
 
 ![the per-frame detector loses the trace where the tracking tool holds it](figures/before_after.png)
 

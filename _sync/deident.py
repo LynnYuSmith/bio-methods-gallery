@@ -16,6 +16,8 @@ forces a new substitution rule, rather than leaking.
 from __future__ import annotations
 
 import re
+import warnings
+from pathlib import Path
 
 # Known lab recording/mouse-ID prefixes → rewritten to a neutral phrase. Underscore-date
 # suffix (``_yymmdd``) is swallowed too. No trailing \b (see module docstring); a non-alnum
@@ -23,29 +25,60 @@ import re
 _ID_PREFIXES = r"(?:cm|cf|cb|abm|abf|abc)"
 _ID_SUB = rf"(?<![A-Za-z0-9]){_ID_PREFIXES}\d{{3,}}(?:_\d{{4,8}})?"
 
+# Forbidden tokens are NOT written in this file: it is public, and a de-identifier that publishes
+# the very tokens it hides defeats itself. They live in ``_sync/private_names.txt`` — one entry per
+# line, ``token`` or ``token = replacement``, ``#`` comments — which is gitignored. See
+# ``private_names.example.txt``. ``sync.py`` refuses to run when that file is missing, so an absent
+# list can never leak silently.
+NAMES_FILE = Path(__file__).with_name("private_names.txt")
+DEFAULT_REPLACEMENT = "the lab"
+
+
+def load_private_names(path: Path | None = None) -> list[tuple[str, str]]:
+    """Read the private token list as (token, replacement) pairs; empty if the file is absent."""
+    p = path or NAMES_FILE
+    if not p.exists():
+        return []
+    out: list[tuple[str, str]] = []
+    for ln in p.read_text(encoding="utf-8").splitlines():
+        ln = ln.strip()
+        if not ln or ln.startswith("#"):
+            continue
+        token, sep, repl = ln.partition("=")
+        out.append((token.strip(), repl.strip() if sep else DEFAULT_REPLACEMENT))
+    return out
+
+
+def name_rules(tokens: list[tuple[str, str]]) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """Build (substitutions, forbidden) rules for a list of (token, replacement) pairs.
+
+    Per token, in order: drop a parenthetical that mentions it (a cross-reference to something
+    private is noise in a public tile), then the possessive form, then the bare token.
+    """
+    subs: list[tuple[str, str]] = []
+    for tok, repl in tokens:
+        esc = re.escape(tok)
+        subs.append((rf"\s*\([^)]*{esc}[^)]*\)", ""))
+        subs.append((rf"(?i)\b{esc}['\u2019]s\b", f"{repl}'s"))
+        subs.append((rf"(?i)\b{esc}", repl))
+    forbidden = [(rf"(?i)\b{re.escape(tok)}", "forbidden token") for tok, _ in tokens]
+    return subs, forbidden
+
+
+_NAME_SUBS, _NAME_FORBIDDEN = name_rules(load_private_names())
+
 # (pattern, replacement), applied in order, to the raw synced source text.
 SUBSTITUTIONS: list[tuple[str, str]] = [
     (r"/Users/[^\s\"')]+", ""),                         # absolute user paths
     (_ID_SUB, "a recording"),                           # mouse / recording IDs (+ _yymmdd)
-    (r"(?i)\bPolinka['’]s\b", "the lab's"),
-    (r"(?i)\bPolinka\b", "the lab"),
-    (r"(?i)\bPolina\b", "the lab"),
-    (r"(?i)\bSonja\b", "the lab"),
-    (r"(?i)\bNevelchuk\b", "the lab"),
-    (r"(?i)\bGaraschuk\b", "the lab"),
-    (r"(?i)\bKoval\b", "the lab"),
+    *_NAME_SUBS,
 ]
 
 # After substitution, NONE of these may remain (label is for the error message). The
 # ID-shape guard below is separate so it can carry an allowlist.
 FORBIDDEN: list[tuple[str, str]] = [
     (r"/Users/", "absolute user path"),
-    (r"(?i)\bpolinka\b", "personal name (Polinka)"),
-    (r"(?i)\bpolina\b", "personal name (Polina)"),
-    (r"(?i)\bsonja\b", "personal name (Sonja)"),
-    (r"(?i)\bnevelchuk\b", "personal name"),
-    (r"(?i)\bgaraschuk\b", "personal name"),
-    (r"(?i)\bkoval\b", "personal name"),
+    *_NAME_FORBIDDEN,
 ]
 
 # Genuinely broad "looks like a recording/mouse ID" guard: 2–4 letters + 3–5 digits, bounded
@@ -66,6 +99,9 @@ def deidentify(text: str) -> str:
     # tidy artefacts left by path removal: "(, " → "(", and collapse INLINE runs of spaces
     # only (lookbehind on a non-space char) so leading code indentation is preserved.
     text = re.sub(r"\(\s*,\s*", "(", text)
+    # tidy the phrasing the token substitutions leave behind ("the <name> lab" -> "the lab")
+    text = re.sub(r"(?i)\bthe lab lab\b", "the lab", text)
+    text = re.sub(r"(?i)\bthe the\b", "the", text)
     text = re.sub(r"(?<=\S)[ \t]{2,}", " ", text)
     return text
 

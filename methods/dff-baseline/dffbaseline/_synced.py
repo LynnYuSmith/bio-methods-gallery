@@ -4,7 +4,7 @@ Real rolling-quantile baseline (with the auto clamp_below_signal footgun-fix and
 
 These are independent copies of the real lab-pipeline functions, de-identified for
 the public gallery. To update: fix the pipeline, then re-run `python _sync/sync.py`.
-Provenance (pipeline @ b1c91757, synced 2026-08-06):
+Provenance (pipeline @ d46072dc, synced 2026-08-29):
 # lib/signals/signal_processing.py :: rolling_baseline, maximin_baseline
 """
 # fmt: off
@@ -39,9 +39,7 @@ def rolling_baseline(y: np.ndarray, fps: float = 30.0, win_s: float = 60, q: flo
         centered baseline (q≈0.5) clamping pulls the baseline DOWN (half the
         samples are below the median), biasing dF/F. If None (default), it is
         auto-derived as ``q < 0.3`` — clamp for lower-envelope, don't for
-        centered — so a caller can't accidentally clamp a median baseline
-        (the lab 2026-06-03: this was an API footgun; the safe behaviour now
-        lives in one place instead of at each call site).
+        centered — so a caller can't accidentally clamp a median baseline.
 
     Returns
     -------
@@ -71,8 +69,7 @@ def maximin_baseline(y: np.ndarray, fps: float = 60.0, win_s: float = 60.0,
     and therefore SUBTRACTS AWAY median-height events), the maximin baseline tracks the true FLOOR
     of the trace — a running minimum envelope, then dilated back by an equal max-filter so it hugs
     the bottom without lagging. Subtracting it keeps median/partial events intact (they carry the
-    within-axon propagation signal), matching the suite2p reconstruct that preserves median peaks
-    (the lab's finding, a recording 2026-07-23). ``sig_frames`` is the pre-smoothing Gaussian σ in FRAMES;
+    within-axon propagation signal), matching the suite2p reconstruct that preserves median peaks. ``sig_frames`` is the pre-smoothing Gaussian σ in FRAMES;
     ``win_s`` the min/max window in seconds.
     """
     from scipy.ndimage import minimum_filter1d, maximum_filter1d

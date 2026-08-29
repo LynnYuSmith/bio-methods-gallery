@@ -15,7 +15,7 @@ the output it produces. Name the established method it is compared against and t
 ![before/after](figures/before_after.png)
 
 One sentence reading the figure: the baseline does X, this method does Y, and here is the difference on
-real data.
+the synthetic example that ships with the tile.
 
 ## Use
 
