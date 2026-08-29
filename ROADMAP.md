@@ -38,6 +38,7 @@ disease-associated neuron states.
 
 | tile | pattern | benchmark / step-deeper |
 |---|---|---|
+| **paired-pseudobulk** [built] | within-subject paired pseudobulk DE: subject as the unit, median-of-ratios normalisation, and the two traps that decide the answer (a shifted reference gene; the signed-rank p-floor at small n) | DESeq2/edgeR normalisation · normalising to a housekeeping or pan-class marker | hers | grew out of reading GSE129308; the tile is the method, demoed on synthetic data with a planted truth |
 | **scrna-ad-reproduce** | QC, normalise, cluster, cell-type, DE (AD vs control), clean scanpy | reproduce a published AD snRNA-seq atlas; the paper's own numbers are the ground truth |
 | **neuron-vulnerability** | which neuron subtypes are selectively lost or hyperactive in AD | one step past the atlas: a vulnerability score per subtype, tied to E/I markers |
 

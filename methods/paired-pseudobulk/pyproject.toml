@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pairedpb"
+version = "0.1.0"
+description = "Within-subject paired pseudobulk for single-nucleus data: median-of-ratios normalisation and a compositional diagnostic, against naive per-10k."
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib", "gallery-style"]
+
+[tool.setuptools.packages.find]
+include = ["pairedpb*"]
