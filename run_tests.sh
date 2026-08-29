@@ -10,11 +10,15 @@ fail=0
 
 run() {  # run <label> <dir>
     local label="$1" dir="$2"
-    local out
+    local full summary
     local target="tests/"; [[ -d "$dir/tests" ]] || target="."
-    out=$(cd "$dir" && "$PY" -m pytest "$target" -q 2>&1 | tail -1)
-    printf '%-30s %s\n' "$label" "$out"
-    [[ "$out" == *"passed"* && "$out" != *"failed"* ]] || fail=1
+    full=$(cd "$dir" && "$PY" -m pytest "$target" -q 2>&1)
+    summary=$(tail -1 <<<"$full")
+    printf '%-30s %s\n' "$label" "$summary"
+    if [[ "$summary" != *"passed"* || "$summary" == *"failed"* || "$summary" == *"error"* ]]; then
+        fail=1
+        sed 's/^/    | /' <<<"$full" | tail -30   # show WHY, not just the count
+    fi
 }
 
 for d in methods/*/; do

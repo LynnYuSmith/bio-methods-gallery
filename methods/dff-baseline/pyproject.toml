@@ -7,7 +7,7 @@ name = "dffbaseline"
 version = "0.1.0"
 description = "A rolling median baseline that lets dF/F sit symmetric around zero, vs a lower-envelope baseline."
 requires-python = ">=3.10"
-dependencies = ["numpy", "scipy"]
+dependencies = ["numpy", "scipy", "pandas"]
 
 [project.optional-dependencies]
 dev = ["pytest", "matplotlib", "gallery-style"]
