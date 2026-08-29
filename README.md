@@ -88,6 +88,18 @@ which a single root-level `pytest` run cannot import together):
 Open source under the [MIT License](LICENSE) — free to read, run, modify and build on.
 Copyright (C) 2026 Eberhard Karls Universität Tübingen / [Polina Yu Koval].
 
-**Please cite it.** If a method here contributes to work you publish or present, cite the
-repository — the entry is in [CITATION.cff](CITATION.cff) (GitHub's "Cite this repository"
-button reads it). The licence also carries terms of use regarding russia's war against Ukraine.
+**Please cite it.** If a method here contributes to work you publish or present, cite the repository —
+the entry is in [CITATION.cff](CITATION.cff), which GitHub's "Cite this repository" button reads.
+
+## Terms of use
+
+By using this project or its source code, for any purpose and in any shape or form, you grant your
+implicit agreement to all the following statements:
+
+- You condemn russia and its military aggression against Ukraine
+- You recognize that russia is an occupant that unlawfully invaded a sovereign state
+- You support Ukraine's territorial integrity, including its claims over temporarily occupied
+  territories of Crimea and Donbas
+- You reject false narratives perpetuated by russian state propaganda
+
+Glory to Ukraine! 🇺🇦
