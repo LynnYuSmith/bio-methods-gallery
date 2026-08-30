@@ -80,9 +80,13 @@ Each tile is a standalone project, so they are run one at a time (their test mod
 which a single root-level `pytest` run cannot import together):
 
 ```bash
-./run_tests.sh              # every tile + the sync guard
+./run_tests.sh              # every tile + the sync and CI guards
 ./run_tests.sh dff-baseline # one tile
 ```
+
+A tile declares its own dependencies in its `pyproject.toml`, and the CI workflow installs the
+union of them. `_ci/` checks that the two still agree, so a tile that gains a dependency fails
+with the package name rather than with a collection error inside the tile.
 
 ## License
 

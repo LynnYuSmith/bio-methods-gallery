@@ -35,7 +35,10 @@ for d in methods/*/; do
     [[ -n "$only" && "$only" != "$tile" ]] && continue
     run "$tile" "$d"
 done
-[[ -z "$only" ]] && run "_sync (de-identifier)" "_sync"
+if [[ -z "$only" ]]; then
+    run "_sync (de-identifier)" "_sync"
+    run "_ci (workflow vs tiles)" "_ci"
+fi
 
 echo
 if [[ $fail -eq 0 ]]; then echo "all green"; else echo "FAILURES — see above"; fi
