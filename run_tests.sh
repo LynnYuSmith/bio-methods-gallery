@@ -8,6 +8,15 @@ PY="${PYTHON:-python3}"
 only="${1:-}"
 fail=0
 
+# One legible failure instead of the same cryptic line repeated for every tile.
+if ! "$PY" -c "import pytest" >/dev/null 2>&1; then
+    echo "run_tests.sh: '$PY' has no pytest." >&2
+    echo "  pip install numpy scipy scikit-image h5py matplotlib tifffile pandas pytest" >&2
+    echo "  pip install -e ./gallery_style" >&2
+    echo "  (or point PYTHON= at an environment that already has them)" >&2
+    exit 1
+fi
+
 run() {  # run <label> <dir>
     local label="$1" dir="$2"
     local full summary
