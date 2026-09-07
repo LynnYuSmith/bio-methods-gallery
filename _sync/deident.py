@@ -68,9 +68,20 @@ def name_rules(tokens: list[tuple[str, str]]) -> tuple[list[tuple[str, str]], li
 _NAME_SUBS, _NAME_FORBIDDEN = name_rules(load_private_names())
 
 # (pattern, replacement), applied in order, to the raw synced source text.
+# Quoted lab speech and lab jargon. The pipeline's comments quote the conversations that
+# produced each decision — verbatim, in Ukrainian, sometimes with a name attached. That is
+# deliberate there (it records WHY the code is the way it is) and unpublishable here: a
+# public tile must carry the reasoning, not the conversation. So a «...» quote is dropped
+# whole, and any surviving token containing Cyrillic becomes a neutral placeholder rather
+# than a hole in the sentence. The guard below then fails the sync if either slips through.
+_QUOTED = r",?\s*[«][^»]*[»]"
+_CYRILLIC_TOKEN = r"[A-Za-z\u0400-\u04FF]*[\u0400-\u04FF][A-Za-z\u0400-\u04FF]*"
+
 SUBSTITUTIONS: list[tuple[str, str]] = [
     (r"/Users/[^\s\"')]+", ""),                         # absolute user paths
     (_ID_SUB, "a recording"),                           # mouse / recording IDs (+ _yymmdd)
+    (_QUOTED, ""),                                      # quoted lab speech, dropped whole
+    (_CYRILLIC_TOKEN, "[lab term]"),                    # inline jargon -> placeholder
     *_NAME_SUBS,
 ]
 
@@ -78,6 +89,7 @@ SUBSTITUTIONS: list[tuple[str, str]] = [
 # ID-shape guard below is separate so it can carry an allowlist.
 FORBIDDEN: list[tuple[str, str]] = [
     (r"/Users/", "absolute user path"),
+    (r"[\u0400-\u04FF]", "Cyrillic text (quoted lab speech or jargon)"),
     *_NAME_FORBIDDEN,
 ]
 

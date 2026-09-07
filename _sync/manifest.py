@@ -24,6 +24,30 @@ _GALLERY_ROOT = Path(__file__).resolve().parent.parent
 PIPELINE_DEFAULT = str(_GALLERY_ROOT.parent / "CalciumImagingPipeline" / "CalciumPipelineLib")
 
 TILES: dict[str, dict] = {
+    "event-detection-arbitrated": {
+        "dest": "arbitrated/_synced.py",
+        "header": (
+            "import math\n"
+            "from typing import Optional, Tuple\n"
+            "import numpy as np\n"
+            "from scipy.signal import find_peaks\n"
+            "\n"
+            "# module constants the lifted functions default to, with the pipeline's values\n"
+            "MIN_F0_COUNTS = 0.0      # F0 floor for the usability guard; OFF by default\n"
+            "MAX_PLAUSIBLE_DFF = 10.0  # above this a trace is a collapsed denominator\n"
+        ),
+        "extracts": [
+            ("lib/events/event_analysis.py",
+             ["recovered_f0", "bouton_unit_usable", "calm_window_baseline",
+              "noise_sigma_negative_tail", "derive_prominence_k",
+              "detect_events_dff", "detect_events_arbitrated"]),
+        ],
+        "note": (
+            "The event detector and the two noise primitives it rests on: the calmest-window "
+            "baseline, the negative-tail sigma, the collapsed-denominator guard, and the "
+            "dF/F-direct detector kept as the comparison arm."
+        ),
+    },
     "dff-baseline": {
         "dest": "dffbaseline/_synced.py",
         "header": (

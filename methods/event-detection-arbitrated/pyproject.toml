@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arbitrated"
+version = "0.1.0"
+description = "Detect calcium events on the denoised trace with the noise scale taken from the measured one, and arbitrate the choice on a null population"
+requires-python = ">=3.10"
+dependencies = ["numpy", "scipy"]
+
+[project.optional-dependencies]
+dev = ["pytest", "matplotlib"]
+
+[tool.setuptools.packages.find]
+include = ["arbitrated*"]
