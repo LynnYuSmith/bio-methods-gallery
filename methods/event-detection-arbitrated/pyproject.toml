@@ -10,7 +10,7 @@ requires-python = ">=3.10"
 dependencies = ["numpy", "scipy"]
 
 [project.optional-dependencies]
-dev = ["pytest", "matplotlib"]
+dev = ["pytest", "matplotlib", "gallery-style"]
 
 [tool.setuptools.packages.find]
 include = ["arbitrated*"]
