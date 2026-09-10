@@ -1,65 +1,123 @@
 # pupil-tracking
 
-Turn a per-frame pupil detector into one clean pupil-size trace, by running it across the
-video with temporal consistency.
+Measure the pupil by fitting its **border**, not by counting its bright pixels — and turn that
+per-frame measurement into one honest trace, with gaps where there was nothing to measure.
 
-**Credit:** the per-frame detector is **Sonja Nevelchuk's** algorithm, reimplemented clean-room
-with her permission; the tracking layer shown here is the contribution.
+![the blob merges with lid glare and reads it as a dilation; the border does not](figures/before_after.png)
 
-![the per-frame detector loses the trace where the tracking tool holds it](figures/before_after.png)
+## The problem with the obvious approach
 
-## The idea
+Under coaxial infrared illumination the pupil retro-reflects: it is the brightest structure in
+the eye, a saturated plateau with a sharp fall into the darker iris. The obvious measurement is
+to threshold the bright pixels, take the largest bright region and report its equivalent radius
+`r = sqrt(area / pi)`.
 
-A per-frame detector guesses the pupil independently in every frame: threshold the dark
-pixels, take the largest dark blob, read off its centre and radius. On its own it drifts.
-A bright corneal glint or a dark eyelid corner makes it pick the wrong blob; a blink leaves
-only a spurious dark patch. The figure shows both failures: a broad hump (frames ~55–80)
-where the swelling eyelid-corner blob becomes the largest dark region and the naive detector
-climbs to it, and sharp downward spikes at the blink frames, where the closed eyelid gives a
-wrong radius instead of an honest gap.
+That measures **how many pixels are bright**, and lid glare is also bright. Where glare covers
+part of the pupil's border the two become one bright region, the equivalent radius grows
+smoothly, and the error looks exactly like a dilation — no warning sign, nothing to catch it
+downstream.
 
-The tracking tool keeps only what is temporally consistent. Among each frame's candidates
-it takes the one nearest the previous pupil centre with a similar radius (so the far-away
-corner blob is rejected even when it is larger), interpolates short gaps (blinks), and
-lightly smooths the result. What comes out follows the true pupil radius through both the
-distractor and the blinks.
+The two methods fail differently, and that is the argument. On the synthetic clip in
+`examples/`, on the frames where the glare band lies across the border, the blob answers every
+single frame and is wrong by up to **5.3 px**, while the border method **refuses** them: it
+cannot see the occluded arc, so it says so. Wrong-and-confident against declining to answer.
+
+## What this measures instead
+
+The border, ray by ray:
+
+1. **Anchor a centre** in the bright plateau — from the previous frame when tracking, so a
+   brighter structure elsewhere in the window cannot capture the measurement.
+2. **Read the radial profile** in 1-px annuli around it: the plateau is the pupil's own
+   brightness, the trough the iris behind its border. Their difference is the contrast, and
+   below a floor there is no border to find.
+3. **Cast 48 rays** and find where each crosses the half-drop level, to sub-pixel precision.
+4. **Keep a ray only if its darkness held** for a few micrometres past the crossing. A ray
+   grazing an eyelash or the rim of a glare band dips below the level and climbs straight back
+   out; a border does not.
+5. **Discard a crossing whose hold cannot be verified inside the given rectangle.** A ray aimed
+   at a dark corner of a tight eye window leaves the image a sample or two after it drops, and
+   forty-eight such rays fit a circle the size of the window to a fraction of a pixel — a clean
+   fit to nothing. This is the most dangerous failure of the method and it costs one line to
+   close.
+6. **Fit a least-squares circle** through the confirmed crossings, and judge it by its
+   **residual and visible arc** rather than by how many points it has. A real border gives a
+   sharp contour from few points; an over-reading fit scatters. Point count and residual
+   correlate only weakly, so the residual is the discriminator.
+
+A frame that fails those guards is **refused**, with the reason attached. A refusal is
+information: a blink has no pupil, and reporting a number for it corrupts every average
+downstream.
+
+## The temporal layer
+
+`track.py` supplies the memory the per-frame measurement deliberately lacks:
+
+* **anchoring** — each frame's search starts from the last accepted centre;
+* **re-acquisition** — after a run of refusals the anchor is stale, so the search is released
+  to the whole frame again;
+* **short gaps interpolated, long ones not** — a three-frame blink between solid measurements
+  can be bridged honestly; a hundred-frame loss cannot;
+* **transient jumps refused** — a pupil dilates smoothly, so a diameter that leaps and returns
+  within a couple of frames is the fit moving, not the eye. Those frames are dropped, not
+  smoothed: smoothing hides the disagreement that tells you the measurement went wrong.
+
+Nothing smooths the surviving samples. A caller who wants a smooth trace can smooth it
+knowingly.
+
+## Calibration
+
+The half-drop border sits slightly inside the disc a human outlines, by a constant that depends
+on the optics rather than on the pupil — an **additive** offset, not a scale factor. Measure it
+once per rig against a handful of hand-drawn references and set `EDGE_OFFSET`. Do not tune the
+level to make the constant small: that improves the constant and worsens the agreement, which
+is the trap of calibrating against your own method.
 
 ## Use
 
 ```python
-from pupiltrack import track_pupil
+from pupiltrack import track_pupil, detect_border
 
-result = track_pupil(frames)          # frames: (n_frames, H, W), an eye-ROI stack
-radius = result["radius"]             # clean per-frame pupil radius (px)
-status = result["status"]             # "detected" / "interpolated" / "lost"
+r = detect_border(frame)              # one frame: radius, residual, arc, contrast, status
+out = track_pupil(frames)             # frames: (n, H, W), an eye-ROI stack
+radius = out["radius"]                # per-frame radius, NaN where nothing was measurable
+status = out["status"]                # "measured" / "interpolated" / the refusal's reason
 ```
 
 ## Run the example
 
 ```bash
 python -m venv .venv && source .venv/bin/activate    # Python 3.10+
-pip install -e . && pip install pytest matplotlib && pip install -e ../../gallery_style
-python examples/demo.py         # writes figures/before_after.png
-pytest
+pip install numpy scipy matplotlib pytest
+python examples/demo.py --figure
+python -m pytest tests/ -q
 ```
 
-## Compared against
+The demo prints, on the synthetic clip:
 
-- **The per-frame detector alone.** No memory between frames, so it follows whichever dark
-  blob is largest — the eyelid corner when it swells — and latches onto a spurious patch on a
-  blink. The tracking tool uses the previous frame as a prior to pick the right candidate,
-  reject those, and bridge the blink frames.
-- **Trained pose/keypoint models** (for example DeepLabCut) for pupil tracking. Those learn
-  the pupil from labelled training data. Here nothing is trained: a per-frame detector plus
-  temporal-consistency bookkeeping do the work.
+```
+brightest blob       median |error|   1.64 px   on 140/140 frames
+border, per frame     median |error|   0.40 px   on 119/140 frames
+border + tracking     median |error|   0.40 px   on 120/140 frames
 
-## Attribution
+on the 14 glare frames (blinks excluded):
+  brightest blob      bias +2.61 px, worst 5.33
 
-The **per-frame pupil detector** (`detect.py`) is **Sonja Nevelchuk's** algorithm,
-re-implemented in NumPy/SciPy for a self-contained demo and included here **with her
-permission**. The **tracking tool** (`track.py`) — candidate selection by a temporal prior,
-gap interpolation, and smoothing — is the contribution this tile shows.
+blinks: the blob reports a number on 4 of 4; the border refuses 4 of 4
+```
 
-## License
+Read the frame counts as part of the result. The blob measures 140 of 140 and is four times
+less accurate; the border measures 120 and is right to 0.4 px on those. The twenty it declines
+are the blinks and the frames whose border the glare covers — and a trace with honest gaps is
+worth more than a full one you cannot check.
 
-See `LICENSE`. The attribution above applies regardless of license.
+Everything here runs on synthetic frames generated by `examples/make_sample.py` — no recorded
+data is included or required.
+
+## Note on an earlier version
+
+An earlier version of this tile demonstrated the temporal layer on a **dark-pupil** blob
+detector (Sonja Nevelchuk's algorithm, reimplemented clean-room with her permission). That
+detector belongs to a different imaging regime — a dark pupil against a lighter iris — and is
+no longer part of the tile. What is shown now is the bright-pupil border fit and its temporal
+layer.

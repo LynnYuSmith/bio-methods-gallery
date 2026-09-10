@@ -20,7 +20,7 @@ clone it, run it, and the figure rebuilds itself.
 | [bouton-detection](methods/bouton-detection) | boutons detected by activity, not brightness; the size window comes from the recording's own active regions |
 | [group-motion-correction](methods/group-motion-correction) | repeat recordings of one FOV registered to a shared reference, so one ROI fits them all |
 | [cross-session-registration](methods/cross-session-registration) | the same FOV matched across days in 3-D on a vesselness fingerprint, recovering the z-offset xy-only registration drops (0/25 → 25/25 boutons matched) |
-| [pupil-tracking](methods/pupil-tracking) | a per-frame pupil detector run with temporal consistency, so blinks and distractors don't break the pupil-size trace |
+| [pupil-tracking](methods/pupil-tracking) | the pupil measured by fitting its BORDER rather than counting bright pixels, refusing the frames it cannot see, and tracked with temporal consistency |
 | [event-detection-arbitrated](methods/event-detection-arbitrated) | calcium events detected on the denoised trace with the noise scale taken from the measured one, arbitrated on ROIs that cannot host events (a bar read off the denoised trace fires on background as often as on real signal) |
 | [dff-baseline](methods/dff-baseline) | a rolling **median** baseline, left unclipped, so ΔF/F sits symmetric around zero instead of biased up |
 | [osi-stats](methods/osi-stats) | orientation selectivity called with a shuffle test + population FDR, not a bare OSI threshold |
@@ -51,8 +51,10 @@ copyright; they are released open under [MIT](LICENSE) with a request to cite.
 
 - **Thin wrappers stay thin, and name what they wrap** — Suite2p, CaImAn, scikit-image, scanpy do the
   heavy lifting where a tile says so; the contribution is the workflow around them.
-- **Borrowed pieces are credited** — the per-frame pupil detector behind `pupil-tracking` is Sonja
-  Nevelchuk's, reimplemented clean-room with permission; the tracking layer is the contribution.
+- **Borrowed pieces are credited** — where a tile runs someone else's algorithm it says so and asks
+  first. `pupil-tracking` used to demonstrate its temporal layer on Sonja Nevelchuk's dark-pupil
+  detector, reimplemented clean-room with her permission; that detector belongs to a different
+  imaging regime and the tile now shows the bright-pupil border fit instead.
 - **Unpublished science is not here.** A method whose scientific claim is still unpublished waits for
   the paper; the gallery ships methods, and each demo runs on synthetic data, never on lab recordings.
 
