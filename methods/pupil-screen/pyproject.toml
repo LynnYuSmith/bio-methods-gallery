@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pupilscreen"
+version = "0.1.0"
+description = "Measure the pupil live from a region of the screen, when the camera cannot be opened twice."
+requires-python = ">=3.10"
+dependencies = ["numpy", "opencv-python"]
+
+[project.optional-dependencies]
+dev = ["pytest", "mss"]
+
+[tool.setuptools.packages.find]
+include = ["pupilscreen*"]

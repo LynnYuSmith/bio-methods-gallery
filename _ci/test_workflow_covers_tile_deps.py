@@ -28,19 +28,45 @@ IN_REPO = {"gallery-style"}
 
 
 def _installed_by_workflow():
+    """Every package the workflow pip-installs, including across line continuations.
+
+    Reading the file line by line missed a `pip install a b \\` continued onto the next line:
+    the continuation does not start with "pip install", so everything on it was invisible and
+    the test passed while CI would have failed. Continuations are joined first, and the "\\"
+    itself is dropped rather than read as a package name.
+    """
+    text = re.sub(r"\\\s*\n\s*", " ", WORKFLOW.read_text())
     names = set()
-    for line in WORKFLOW.read_text().splitlines():
+    for line in text.splitlines():
         line = line.strip()
         if not line.startswith("pip install"):
             continue
         for token in line.split()[2:]:
-            if token.startswith("-") or token.startswith("."):   # flags, local paths
-                continue
+            if token in ("\\",) or token.startswith("-") or token.startswith("."):
+                continue                                          # flags, local paths
             names.add(_requirement_name(token))
     return names - {"pip"}
 
 
 from tiledeps import tiles as _tiles  # noqa: E402
+
+
+def test_a_continued_pip_line_is_read_to_its_end():
+    """The blind spot this reader had: a package after a backslash was simply not seen."""
+    import tempfile
+    global WORKFLOW
+    keep = WORKFLOW
+    try:
+        with tempfile.NamedTemporaryFile("w", suffix=".yml", delete=False) as fh:
+            fh.write("        run: |\n"
+                     "          pip install numpy scipy \\\n"
+                     "                      tifffile mss\n")
+            WORKFLOW = Path(fh.name)
+        got = _installed_by_workflow()
+    finally:
+        WORKFLOW = keep
+    assert {"numpy", "scipy", "tifffile", "mss"} <= got, got
+    assert "\\" not in got, "the continuation marker was read as a package"
 
 
 def test_the_reader_finds_something():
